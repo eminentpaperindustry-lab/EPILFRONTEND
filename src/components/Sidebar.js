@@ -26,66 +26,107 @@ const MenuItem = ({ to, children, icon: Icon, onClick }) => (
   </NavLink>
 );
 
-export default function Sidebar() {
+export default function Sidebar({ mobile }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
   const closeSidebar = () => setIsOpen(false);
 
+  // MOBILE SIDEBAR
+  if (mobile) {
+    return (
+      <>
+        {/* Hamburger Icon */}
+        <button
+          className="md:hidden fixed top-4 left-4 z-[100] bg-gray-900 text-white p-2 rounded-md shadow-lg"
+          onClick={toggleSidebar}
+        >
+          {isOpen ? <FaTimes size={22} /> : <FaBars size={22} />}
+        </button>
+
+        {/* Mobile Drawer */}
+<aside
+  className={`fixed top-0 left-0 h-full w-64 bg-gray-900 text-white z-[90] transform transition-transform duration-300 ${
+    isOpen ? "translate-x-0" : "-translate-x-full"
+  }`}
+>
+  {/* HEADER */}
+  <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
+
+    {/* LEFT SIDE → Only Close Button */}
+    <button
+      onClick={closeSidebar}
+      className="text-gray-400 hover:text-white text-2xl"
+    >
+      ✕
+    </button>
+
+    {/* RIGHT SIDE → Title + Subtitle */}
+    <div className="text-right">
+      <div className="text-lg font-semibold leading-none">
+        Employee Portal
+      </div>
+      <div className="text-[11px] text-gray-400 mt-1 leading-none">
+        Task Management
+      </div>
+    </div>
+  </div>
+
+  {/* NAVIGATION MENU */}
+  <nav className="p-6 space-y-2">
+    <MenuItem to="/delegation" icon={FaTasks} onClick={closeSidebar}>
+      Delegation
+    </MenuItem>
+
+    <MenuItem to="/checklist" icon={FaClipboardList} onClick={closeSidebar}>
+      Checklist
+    </MenuItem>
+
+    <MenuItem to="/help-ticket" icon={FaLifeRing} onClick={closeSidebar}>
+      Help Ticket
+    </MenuItem>
+
+    <MenuItem to="/support-ticket" icon={FaHeadset} onClick={closeSidebar}>
+      Support Ticket
+    </MenuItem>
+  </nav>
+</aside>
+
+
+
+        {/* Background overlay */}
+        {isOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-40 z-[80]"
+            onClick={closeSidebar}
+          />
+        )}
+      </>
+    );
+  }
+
+  // DESKTOP SIDEBAR
   return (
-    <>
-      {/* Mobile Hamburger */}
-      <button
-        className="fixed top-4 left-4 z-50 md:hidden bg-gray-900 text-white p-2 rounded-md shadow-lg focus:outline-none"
-        onClick={toggleSidebar}
-        aria-label="Toggle Menu"
-      >
-        {isOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
-      </button>
+    <aside className="h-screen w-64 bg-gray-900 text-white flex flex-col">
+      <div className="px-6 py-5 border-b border-gray-800">
+        <div className="text-2xl font-bold">Employee Portal</div>
+        <div className="text-xs text-gray-400">Task Management</div>
+      </div>
 
-      {/* Sidebar */}
-      <aside
-        className={`
-          w-64 bg-gray-900 text-white flex flex-col"
-          ${isOpen ? "translate-x-0" : "-translate-x-full"} 
-          md:translate-x-0 md:static md:flex md:flex-col`}
-      >
-        {/* Logo / Header */}
-        <div className="px-6 py-5 border-b border-gray-800">
-          <div className="text-2xl font-bold text-white">Employee Portal</div>
-          <div className="text-xs text-gray-400 mt-1">Task Management</div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="p-8 flex-1 space-y-1">
-          <MenuItem to="/delegation" icon={FaTasks} onClick={closeSidebar}>
-            Delegation
-          </MenuItem>
-          <MenuItem to="/checklist" icon={FaClipboardList} onClick={closeSidebar}>
-            Checklist
-          </MenuItem>
-          <MenuItem to="/help-ticket" icon={FaLifeRing} onClick={closeSidebar}>
-            Help Ticket
-          </MenuItem>
-          <MenuItem to="/support-ticket" icon={FaHeadset} onClick={closeSidebar}>
-            Support Ticket
-          </MenuItem>
-        </nav>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-800 text-xs text-gray-500 text-center">
-          © {new Date().getFullYear()} Eminent Paper Industry LLP
-        </div>
-      </aside>
-
-      {/* Overlay for mobile */}
-      {isOpen && (
-        <div
-          onClick={closeSidebar}
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
-          aria-hidden="true"
-        />
-      )}
-    </>
+      <nav className="p-6 space-y-2">
+        <MenuItem to="/delegation" icon={FaTasks}>
+          Delegation
+        </MenuItem>
+        <MenuItem to="/checklist" icon={FaClipboardList}>
+          Checklist
+        </MenuItem>
+        <MenuItem to="/help-ticket" icon={FaLifeRing}>
+          Help Ticket
+        </MenuItem>
+        <MenuItem to="/support-ticket" icon={FaHeadset}>
+          Support Ticket
+        </MenuItem>
+      </nav>
+    </aside>
   );
 }

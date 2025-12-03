@@ -100,7 +100,14 @@ export default function Topbar() {
           <div className="flex flex-col leading-tight">
             <h1
               className="text-base font-semibold"
-              style={{ color: theme.text }}
+       style={{ 
+  color: theme.text, 
+  paddingTop: "10px", 
+  paddingRight: "15px", 
+  // paddingBottom: "10px", 
+  paddingLeft: "15px",
+  fontSize: "16px" 
+}}
             >
               Task Management
             </h1>

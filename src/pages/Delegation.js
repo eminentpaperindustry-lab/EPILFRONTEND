@@ -9,8 +9,12 @@ export default function Delegation() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [activeTab, setActiveTab] = useState("pending");
-  const [btnLoading, setBtnLoading] = useState(false);
-  const [shiftTask, setShiftTask] = useState(null); // task to shift
+
+  // 🔥 FIXED: Individual button loading
+  const [loadingTaskId, setLoadingTaskId] = useState(null);
+  const [loadingShiftBtn, setLoadingShiftBtn] = useState(false);
+
+  const [shiftTask, setShiftTask] = useState(null);
   const [shiftDate, setShiftDate] = useState("");
 
   const [form, setForm] = useState({
@@ -20,6 +24,7 @@ export default function Delegation() {
     Notes: "",
   });
 
+  // Load Tasks
   useEffect(() => {
     async function loadTasks() {
       try {
@@ -35,7 +40,7 @@ export default function Delegation() {
 
   // Create Task
   const createTask = async () => {
-    setBtnLoading(true);
+    setLoadingTaskId("create");
     try {
       const res = await axios.post("/delegations/", form);
 
@@ -62,13 +67,13 @@ export default function Delegation() {
     } catch (err) {
       console.error(err);
     } finally {
-      setBtnLoading(false);
+      setLoadingTaskId(null);
     }
   };
 
   // Mark Done
   const handleDone = async (taskID) => {
-    setBtnLoading(true);
+    setLoadingTaskId(taskID);
     try {
       await axios.patch(`/delegations/done/${taskID}`);
 
@@ -82,24 +87,24 @@ export default function Delegation() {
     } catch (err) {
       console.error(err);
     } finally {
-      setBtnLoading(false);
+      setLoadingTaskId(null);
     }
   };
 
-  // Open Shift Date Picker
+  // Open Shift Picker
   const openShiftPicker = (task) => {
-    if (task.Revisions >= 2) return;
     setShiftTask(task);
-    setShiftDate(""); // reset previous
+    setShiftDate("");
   };
 
   // Confirm Shift
   const confirmShift = async () => {
-    if (!shiftDate || !shiftTask) return;
+    if (!shiftDate) return;
+
+    setLoadingShiftBtn(true);
 
     const revisionField = shiftTask.Revisions === 0 ? "Revision1" : "Revision2";
 
-    setBtnLoading(true);
     try {
       await axios.patch(`/delegations/shift/${shiftTask.TaskID}`, {
         newDeadline: shiftDate,
@@ -124,10 +129,11 @@ export default function Delegation() {
     } catch (err) {
       console.error(err);
     } finally {
-      setBtnLoading(false);
+      setLoadingShiftBtn(false);
     }
   };
 
+  // Filter Tasks
   const filteredTasks =
     activeTab === "pending"
       ? tasks.filter((t) => !t.FinalDate)
@@ -141,12 +147,14 @@ export default function Delegation() {
   if (loading) return <div className="p-6 text-lg">Loading...</div>;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Delegation Tasks</h2>
+        <h2 className="text-xl md:text-2xl font-bold">Delegation Tasks</h2>
+
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow"
+          className="bg-blue-600 text-white px-4 py-2 rounded shadow text-sm md:text-base"
           onClick={() => setShowCreate(true)}
         >
           + New Task
@@ -154,9 +162,9 @@ export default function Delegation() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex gap-3 mb-6">
         <button
-          className={`px-4 py-2 rounded ${
+          className={`px-3 py-2 rounded text-sm md:text-base ${
             activeTab === "pending"
               ? "bg-blue-600 text-white"
               : "bg-gray-200 text-gray-700"
@@ -167,22 +175,23 @@ export default function Delegation() {
         </button>
 
         <button
-          className={`px-4 py-2 rounded ${
+          className={`px-3 py-2 rounded text-sm md:text-base ${
             activeTab === "done"
               ? "bg-green-600 text-white"
               : "bg-gray-200 text-gray-700"
           }`}
           onClick={() => setActiveTab("done")}
         >
-          Completed (last 6 hours)
+          Completed (Last 6 Hrs)
         </button>
       </div>
 
-      {/* Create Task Form */}
+      {/* Create Task */}
       {showCreate && (
         <div className="bg-white p-4 rounded shadow mb-6 border">
           <h3 className="text-lg font-semibold mb-3">Create New Task</h3>
-          <div className="space-y-3">
+
+          <div className="grid gap-3">
             <input
               className="w-full border p-2 rounded"
               placeholder="Task Name"
@@ -219,10 +228,11 @@ export default function Delegation() {
               <button
                 className="bg-blue-600 text-white px-4 py-2 rounded"
                 onClick={createTask}
-                disabled={btnLoading}
+                disabled={loadingTaskId === "create"}
               >
-                {btnLoading ? "Saving..." : "Save"}
+                {loadingTaskId === "create" ? "Saving..." : "Save"}
               </button>
+
               <button
                 className="px-4 py-2 rounded border"
                 onClick={() => setShowCreate(false)}
@@ -238,14 +248,15 @@ export default function Delegation() {
       <div className="grid gap-4">
         {filteredTasks.map((task) => (
           <div key={task.TaskID} className="p-4 bg-white rounded shadow border">
-            <div className="flex justify-between items-center">
+
+            <div className="flex justify-between items-start">
               <div>
                 <div className="font-semibold text-lg">{task.TaskName}</div>
                 <div className="text-sm text-gray-600">
                   Deadline: {task.Deadline || "—"}
                 </div>
                 <div className="text-sm text-gray-600">
-                  Revisions: {task.Revisions} 
+                  Revisions: {task.Revisions}
                   {task.Revision1 && ` | Rev1: ${task.Revision1}`}
                   {task.Revision2 && ` | Rev2: ${task.Revision2}`}
                 </div>
@@ -254,7 +265,7 @@ export default function Delegation() {
                 </div>
               </div>
 
-              <div
+              <span
                 className={`px-2 py-1 rounded text-sm ${
                   task.Status === "Completed"
                     ? "bg-green-100 text-green-700"
@@ -264,28 +275,29 @@ export default function Delegation() {
                 }`}
               >
                 {task.Status}
-              </div>
+              </span>
             </div>
 
-            <div className="flex gap-3 mt-3">
+            {/* Buttons */}
+            <div className="flex gap-3 mt-3 flex-wrap">
               {!task.FinalDate && (
                 <>
+                  {/* Mark Done */}
                   <button
                     onClick={() => handleDone(task.TaskID)}
                     className="bg-green-600 text-white px-3 py-1 rounded"
-                    disabled={btnLoading}
+                    disabled={loadingTaskId === task.TaskID}
                   >
-                    {btnLoading ? "Processing..." : "Mark Done"}
+                    {loadingTaskId === task.TaskID ? "Processing..." : "Mark Done"}
                   </button>
 
+                  {/* Shift Deadline */}
                   <button
                     onClick={() => openShiftPicker(task)}
                     className="bg-yellow-600 text-white px-3 py-1 rounded"
-                    disabled={task.Revisions >= 2 || btnLoading}
+                    disabled={task.Revisions >= 2}
                   >
-                    {task.Revisions >= 2
-                      ? "Max Shifts Reached"
-                      : "Shift Deadline"}
+                    {task.Revisions >= 2 ? "Max Shifts Reached" : "Shift Deadline"}
                   </button>
                 </>
               )}
@@ -294,27 +306,30 @@ export default function Delegation() {
         ))}
       </div>
 
-      {/* Shift Date Picker Modal */}
+      {/* Shift Modal */}
       {shiftTask && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow w-96">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded shadow w-full max-w-sm">
             <h3 className="text-lg font-semibold mb-3">
               Shift Deadline for {shiftTask.TaskName}
             </h3>
+
             <input
               type="date"
               className="w-full border p-2 rounded mb-3"
               value={shiftDate}
               onChange={(e) => setShiftDate(e.target.value)}
             />
+
             <div className="flex gap-3 justify-end">
               <button
                 className="bg-blue-600 text-white px-4 py-2 rounded"
                 onClick={confirmShift}
-                disabled={btnLoading || !shiftDate}
+                disabled={loadingShiftBtn}
               >
-                {btnLoading ? "Processing..." : "Confirm"}
+                {loadingShiftBtn ? "Processing..." : "Confirm"}
               </button>
+
               <button
                 className="px-4 py-2 rounded border"
                 onClick={() => setShiftTask(null)}

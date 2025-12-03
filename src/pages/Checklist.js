@@ -7,25 +7,19 @@ export default function Checklist() {
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("pending");
-
-  // only mark-done button loading
   const [processingTask, setProcessingTask] = useState(null);
 
   // ---------------- DATE PARSER ----------------
   const parseDate = (d) => {
     if (!d) return null;
 
-    // Format: DD/MM/YYYY HH:mm:ss
     if (/^\d{2}\/\d{2}\/\d{4}/.test(d)) {
       const [date, time] = d.split(" ");
       const [day, mon, yr] = date.split("/");
       return new Date(`${yr}-${mon}-${day}T${time || "00:00:00"}`);
     }
 
-    // Format: YYYY-MM-DD HH:mm:ss
-    if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
-      return new Date(d);
-    }
+    if (/^\d{4}-\d{2}-\d{2}/.test(d)) return new Date(d);
 
     const fallback = new Date(d);
     return isNaN(fallback) ? null : fallback;
@@ -71,17 +65,13 @@ export default function Checklist() {
   // ---------------- WEEK RANGE ----------------
   const getWeekRange = (date) => {
     const d = new Date(date);
-    const day = d.getDay(); // 0 = Sun
-
-    // Monday as start
+    const day = d.getDay();
     const start = new Date(d);
     start.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
     start.setHours(0, 0, 0, 0);
-
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
     end.setHours(23, 59, 59, 999);
-
     return { start, end };
   };
 
@@ -89,134 +79,101 @@ export default function Checklist() {
   const filteredChecklists = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const { start: weekStart, end: weekEnd } = getWeekRange(today);
 
     return checklists.filter((c) => {
       const planned = parseDate(c.Planned);
       const actual = parseDate(c.Actual);
-
       if (!planned) return false;
 
       planned.setHours(0, 0, 0, 0);
-
       const isDone = !!actual;
       const freq = c.Freq;
 
-      // ---------------- PENDING TAB ----------------
       if (activeTab === "pending") {
         if (isDone) return false;
-
-        // DAILY OVERDUE
         if (freq === "D" && planned < today) return true;
-
-        // WEEKLY OVERDUE
         if (freq === "W" && planned < weekStart) return true;
-
-        // MONTHLY OVERDUE
         if (
           freq === "M" &&
           (planned.getFullYear() < today.getFullYear() ||
             (planned.getFullYear() === today.getFullYear() &&
               planned.getMonth() < today.getMonth()))
-        ) {
+        )
           return true;
-        }
-
         return false;
       }
 
-      // ---------------- DAILY TAB ----------------
-      if (activeTab === "Daily") {
-        return (
-          freq === "D" &&
-          planned.getTime() === today.getTime() &&
-          !isDone
-        );
-      }
-
-      // ---------------- WEEKLY TAB ----------------
-      if (activeTab === "Weekly") {
-        return (
-          freq === "W" &&
-          !isDone &&
-          planned >= weekStart &&
-          planned <= weekEnd
-        );
-      }
-
-      // ---------------- MONTHLY TAB ----------------
-      if (activeTab === "Monthly") {
-        return (
-          freq === "M" &&
-          !isDone &&
-          planned.getMonth() === today.getMonth() &&
-          planned.getFullYear() === today.getFullYear()
-        );
-      }
+      if (activeTab === "Daily") return freq === "D" && planned.getTime() === today.getTime() && !isDone;
+      if (activeTab === "Weekly") return freq === "W" && !isDone && planned >= weekStart && planned <= weekEnd;
+      if (activeTab === "Monthly") return freq === "M" && !isDone && planned.getMonth() === today.getMonth() && planned.getFullYear() === today.getFullYear();
 
       return false;
     });
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading)
+    return (
+      <div className="p-6 text-center text-gray-600 text-base sm:text-lg">
+        Loading...
+      </div>
+    );
 
   // ---------------- UI ----------------
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">Checklist</h1>
+    <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
+      <h1 className="text-xl sm:text-2xl font-semibold mb-4 text-center sm:text-left">
+        Checklist
+      </h1>
 
-      <div className="flex gap-2 mb-4">
+      {/* Tabs */}
+      <div className="flex flex-nowrap gap-2 mb-4 justify-center sm:justify-start overflow-x-auto scrollbar-hide">
         {["pending", "Daily", "Weekly", "Monthly"].map((tab) => (
           <button
             key={tab}
-            className={`px-4 py-2 rounded ${
-              activeTab === tab ? "bg-blue-600 text-white" : "bg-gray-300"
+            className={`flex-shrink-0 px-3 sm:px-4 py-1 sm:py-2 rounded font-medium text-sm sm:text-base transition-colors duration-200 ${
+              activeTab === tab
+                ? "bg-blue-600 text-white shadow-sm"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab}
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
       </div>
 
+      {/* Checklist Items */}
       <div className="grid gap-3">
         {filteredChecklists().map((c) => (
           <div
             key={c.TaskID}
-            className="p-4 bg-white shadow rounded flex justify-between items-center"
+            className="p-3 sm:p-4 bg-white rounded shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center"
           >
-            <div>
-              <div className="font-semibold">{c.Task}</div>
-              <div className="text-sm text-gray-500">
-                Frequency:{" "}
-                {c.Freq === "D"
-                  ? "Daily"
-                  : c.Freq === "W"
-                  ? "Weekly"
-                  : "Monthly"}
+            <div className="mb-2 sm:mb-0 sm:max-w-[70%]">
+              <div className="font-semibold text-gray-800 text-base sm:text-lg">{c.Task}</div>
+              <div className="text-gray-600 text-sm mt-1">
+                Frequency: {c.Freq === "D" ? "Daily" : c.Freq === "W" ? "Weekly" : "Monthly"}
               </div>
-              <div className="text-sm text-gray-500">Planned: {c.Planned}</div>
+              <div className="text-gray-500 text-sm mt-1">Planned: {c.Planned}</div>
             </div>
 
             {!c.Actual && (
               <button
                 onClick={() => markDone(c.TaskID)}
                 disabled={processingTask === c.TaskID}
-                className={`px-3 py-1 rounded text-white ${
-                  processingTask === c.TaskID
-                    ? "bg-gray-400"
-                    : "bg-green-600"
+                className={`mt-2 sm:mt-0 px-4 sm:px-5 py-1.5 sm:py-2 rounded font-medium text-white transition-colors duration-200 ${
+                  processingTask === c.TaskID ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
                 }`}
               >
-                {processingTask === c.TaskID ? "Loading..." : "Mark Done"}
+                {processingTask === c.TaskID ? "Processing..." : "Mark Done"}
               </button>
             )}
           </div>
         ))}
 
         {filteredChecklists().length === 0 && (
-          <p className="text-gray-500">No data found.</p>
+          <p className="text-gray-500 text-center mt-6 text-sm sm:text-base">No data found.</p>
         )}
       </div>
     </div>
