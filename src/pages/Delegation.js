@@ -280,8 +280,9 @@ export default function Delegation() {
                   Priority: {task.Priority || "Normal"}
                 </div>
                 {task.Status === "Completed" &&
-                  (task.Taskcompletedapproval === "" ||
-                    task.Taskcompletedapproval === "NotApproved") && (
+                  // (task.Taskcompletedapproval === "" ||
+                  //   task.Taskcompletedapproval === "NotApproved") && 
+                    (
                     <div className="text-sm text-red-600">Need To Approved</div>
                   )}
               </div>
