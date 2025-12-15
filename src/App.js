@@ -14,6 +14,8 @@ import { AuthContext } from "./context/AuthContext";
 export default function App() {
   const { user } = useContext(AuthContext);
 
+  console.log("Based URL : ",process.env.REACT_APP_BASE_URL)
+
   return (
     <Routes>
 

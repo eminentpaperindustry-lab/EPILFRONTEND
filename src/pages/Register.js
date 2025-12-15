@@ -21,7 +21,7 @@ export default function Register() {
     setMsg("");
 
     try {
-      const res = await axios.post("https://epilbackend.onrender.com/api/auth/register", {
+      const res = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/register`, {
         name,
         mobile,
         password,

@@ -7,7 +7,7 @@ export default function Delegation() {
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(false); // Controls visibility of Create Task modal
   const [activeTab, setActiveTab] = useState("pending");
 
   const [loadingTaskId, setLoadingTaskId] = useState(null);
@@ -29,7 +29,7 @@ export default function Delegation() {
   const normalizeDate = (date) => {
     if (!date) return "";
     const d = new Date(date);
-    if (isNaN(d)) return ""; // invalid date
+    if (isNaN(d)) return ""; // Invalid date
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
@@ -84,7 +84,7 @@ export default function Delegation() {
         ...tasks,
       ]);
 
-      setShowCreate(false);
+      setShowCreate(false); // Close modal after task creation
       setForm({ TaskName: "", Deadline: "", Priority: "", Notes: "" });
     } catch (err) {
       console.error(err);
@@ -162,15 +162,17 @@ export default function Delegation() {
     activeTab === "pending"
       ? tasks.filter(
           (t) =>
-            t.Status !== "Completed" &&
-            (t.Taskcompletedapproval === "" ||
-              t.Taskcompletedapproval === "NotApproved")
+            (t.Status === "Pending" || t.Status === "Shifted") &&
+            !t.FinalDate &&
+            (t.Taskcompletedapproval === "" || t.Taskcompletedapproval === "Pending") &&
+            t.Taskcompletedapproval !== "Approved"
         )
       : tasks.filter(
           (t) =>
             t.Status === "Completed" &&
-            (t.Taskcompletedapproval === "" ||
-              t.Taskcompletedapproval === "NotApproved")
+            t.FinalDate &&
+            (t.Taskcompletedapproval === "" || t.Taskcompletedapproval === "Pending") &&
+            t.Taskcompletedapproval !== "Approved"
         );
 
   if (loading) return <div className="p-6 text-lg">Loading...</div>;
@@ -182,7 +184,7 @@ export default function Delegation() {
         <h2 className="text-xl md:text-2xl font-bold">Delegation Tasks</h2>
         <button
           className="bg-blue-600 text-white px-4 py-2 rounded shadow text-sm md:text-base"
-          onClick={() => setShowCreate(true)}
+          onClick={() => setShowCreate(true)} // Open modal on click
         >
           + New Task
         </button>
@@ -192,9 +194,7 @@ export default function Delegation() {
       <div className="flex gap-3 mb-6">
         <button
           className={`px-3 py-2 rounded text-sm md:text-base ${
-            activeTab === "pending"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200 text-gray-700"
+            activeTab === "pending" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
           }`}
           onClick={() => setActiveTab("pending")}
         >
@@ -202,9 +202,7 @@ export default function Delegation() {
         </button>
         <button
           className={`px-3 py-2 rounded text-sm md:text-base ${
-            activeTab === "done"
-              ? "bg-green-600 text-white"
-              : "bg-gray-200 text-gray-700"
+            activeTab === "done" ? "bg-green-600 text-white" : "bg-gray-200 text-gray-700"
           }`}
           onClick={() => setActiveTab("done")}
         >
@@ -212,7 +210,7 @@ export default function Delegation() {
         </button>
       </div>
 
-      {/* Create Task */}
+      {/* Create Task Modal */}
       {showCreate && (
         <div className="bg-white p-4 rounded shadow mb-6 border">
           <h3 className="text-lg font-semibold mb-3">Create New Task</h3>

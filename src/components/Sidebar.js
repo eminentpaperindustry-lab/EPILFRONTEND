@@ -81,17 +81,19 @@ export default function Sidebar({ mobile }) {
     <MenuItem to="/checklist" icon={FaClipboardList} onClick={closeSidebar}>
       Checklist
     </MenuItem>
+      <MenuItem to="/support-ticket" icon={FaHeadset} onClick={closeSidebar}>
+      Support Ticket
+    </MenuItem>
 
     <MenuItem to="/help-ticket" icon={FaLifeRing} onClick={closeSidebar}>
       Help Ticket
     </MenuItem>
 
-    <MenuItem to="/support-ticket" icon={FaHeadset} onClick={closeSidebar}>
-      Support Ticket
-    </MenuItem>
+    
+
+  
   </nav>
 </aside>
-
 
 
         {/* Background overlay */}
@@ -120,12 +122,13 @@ export default function Sidebar({ mobile }) {
         <MenuItem to="/checklist" icon={FaClipboardList}>
           Checklist
         </MenuItem>
+           <MenuItem to="/support-ticket" icon={FaHeadset}>
+          Support Ticket
+        </MenuItem>
         <MenuItem to="/help-ticket" icon={FaLifeRing}>
           Help Ticket
         </MenuItem>
-        <MenuItem to="/support-ticket" icon={FaHeadset}>
-          Support Ticket
-        </MenuItem>
+     
       </nav>
     </aside>
   );

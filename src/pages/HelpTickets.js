@@ -1,199 +1,231 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import axios from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 export default function HelpTickets() {
   const { user } = useContext(AuthContext);
+
   const [employees, setEmployees] = useState([]);
   const [assignedTickets, setAssignedTickets] = useState([]);
   const [createdTickets, setCreatedTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("assigned");
-  const [form, setForm] = useState({ AssignedTo: "", Issue: "" });
-  const [updatingStatus, setUpdatingStatus] = useState({});
+  const [form, setForm] = useState({ AssignedTo: "", Issue: "", IssuePhoto: null });
+  const [creating, setCreating] = useState(false);
+  const [updating, setUpdating] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [modalImage, setModalImage] = useState(null);
 
-  // Load Employees
+  const fileInputRef = useRef();
+  const authHeader = { headers: { Authorization: `Bearer ${user.token}` } };
+
   const loadEmployees = async () => {
     try {
-      const res = await axios.get("/employee/all", {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-      setEmployees(res.data || []);
+      const res = await axios.get("/employee/all", authHeader);
+      setEmployees((res.data || []).filter(e => e.name !== user.name));
     } catch (err) {
-      console.error("Failed to load employees", err);
+      console.error("Failed to load employees:", err);
     }
   };
 
-  // Load Tickets
   const loadTickets = async () => {
     try {
       const [assignedRes, createdRes] = await Promise.all([
-        axios.get("/helpTickets/assigned", {
-          headers: { Authorization: `Bearer ${user.token}` },
-        }),
-        axios.get("/helpTickets/created", {
-          headers: { Authorization: `Bearer ${user.token}` },
-        }),
+        axios.get("/helpTickets/assigned", authHeader),
+        axios.get("/helpTickets/created", authHeader),
       ]);
-
-      // Assigned tab: only tickets assigned to me & not done
-      setAssignedTickets(
-        (assignedRes.data || []).filter(
-          (t) => t.AssignedTo === user.name && t.Status !== "Done"
-        )
-      );
-
-      // Created tab: only tickets created by me & not done
-      setCreatedTickets(
-        (createdRes.data || []).filter(
-          (t) => t.CreatedBy === user.name && t.Status !== "Done"
-        )
-      );
+      setAssignedTickets((assignedRes.data || []).filter(t => t.Status !== "Done"));
+      setCreatedTickets((createdRes.data || []).filter(t => t.Status !== "Done"));
     } catch (err) {
-      console.error("Failed to load tickets", err);
-    } finally {
-      setLoading(false);
+      console.error("Failed to load tickets:", err);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
-    if (user) {
-      loadEmployees();
-      loadTickets();
-    }
-  }, [user]);
+    loadEmployees();
+    loadTickets();
+  }, []);
 
-  // Create Ticket
-  const createTicket = async () => {
-    if (!form.AssignedTo || !form.Issue) {
-      alert("Please select employee and describe the issue");
-      return;
-    }
-    try {
-      await axios.post("/helpTickets/create", form, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-      setForm({ AssignedTo: "", Issue: "" });
-      await loadTickets();
-    } catch (err) {
-      console.error("Failed to create ticket", err.response?.data || err);
-    }
+  const handleFileChange = (e) => {
+    setForm(prev => ({ ...prev, IssuePhoto: e.target.files[0] }));
   };
 
-  // Update Ticket Status
-  const updateStatus = async (TicketID, Status) => {
-    setUpdatingStatus((prev) => ({ ...prev, [TicketID]: true }));
+  const createTicket = async () => {
+    if (!form.AssignedTo || !form.Issue) return alert("All fields required");
+    setCreating(true);
+
     try {
-      await axios.patch(`/helpTickets/status/${TicketID}`, { Status }, {
-        headers: { Authorization: `Bearer ${user.token}` },
+      const formData = new FormData();
+      formData.append("AssignedTo", form.AssignedTo);
+      formData.append("Issue", form.Issue);
+      if (form.IssuePhoto) formData.append("IssuePhoto", form.IssuePhoto);
+
+      await axios.post("/helpTickets/create", formData, {
+        headers: { ...authHeader.headers, "Content-Type": "multipart/form-data" },
       });
+
+      setForm({ AssignedTo: "", Issue: "", IssuePhoto: null });
+      if (fileInputRef.current) fileInputRef.current.value = null;
+
       await loadTickets();
     } catch (err) {
-      console.error("Failed to update ticket status", err.response?.data || err);
-    } finally {
-      setUpdatingStatus((prev) => ({ ...prev, [TicketID]: false }));
+      alert(err.response?.data?.error || "Failed to create ticket");
     }
+
+    setCreating(false);
+  };
+
+  const updateStatus = async (id, status) => {
+    setUpdating(p => ({ ...p, [id]: true }));
+    try {
+      await axios.patch(`/helpTickets/status/${id}`, { Status: status }, authHeader);
+      await loadTickets();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to update status");
+    }
+    setUpdating(p => ({ ...p, [id]: false }));
   };
 
   if (loading) return <div>Loading...</div>;
-
-  // Decide which tickets to show
-  const ticketsToShow =
-    activeTab === "assigned" ? assignedTickets : createdTickets;
+  const tickets = activeTab === "assigned" ? assignedTickets : createdTickets;
 
   return (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-4">Help Tickets</h2>
 
-      {/* CREATE TICKET FORM */}
+      {/* Create Ticket Form */}
       <div className="bg-white p-4 rounded shadow mb-6">
-        <h3 className="text-lg font-semibold mb-2">Create New Ticket</h3>
+        <h3 className="font-semibold mb-2">Create Ticket</h3>
+
         <select
           className="w-full border p-2 rounded mb-2"
           value={form.AssignedTo}
           onChange={(e) => setForm({ ...form, AssignedTo: e.target.value })}
         >
-          <option value="">-- Select Employee --</option>
-          {employees.map((emp) => (
-            <option key={emp.name} value={emp.name}>{emp.name}</option>
+          <option value="">Select Employee</option>
+          {employees.map(e => (
+            <option key={e.name} value={e.name}>{e.name}</option>
           ))}
         </select>
+
         <textarea
           className="w-full border p-2 rounded mb-2"
-          placeholder="Describe the issue"
+          placeholder="Issue"
           value={form.Issue}
           onChange={(e) => setForm({ ...form, Issue: e.target.value })}
         />
-        <button className="bg-green-600 text-white px-4 py-2 rounded" onClick={createTicket}>
-          Create Ticket
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="mb-2"
+        />
+
+        {form.IssuePhoto && (
+          <img
+            src={URL.createObjectURL(form.IssuePhoto)}
+            alt="preview"
+            className="w-32 h-32 object-cover mb-2 border rounded"
+          />
+        )}
+
+        <button
+          disabled={creating}
+          onClick={createTicket}
+          className={`px-4 py-2 rounded text-white ${creating ? "bg-gray-400" : "bg-green-600"}`}
+        >
+          {creating ? "Creating..." : "Create Ticket"}
         </button>
       </div>
 
-      {/* TABS */}
-      <div className="flex gap-2 mb-4">
+      {/* Tabs */}
+      <div className="flex gap-3 mb-4">
         <button
-          className={`px-3 py-2 rounded ${activeTab === "assigned" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
           onClick={() => setActiveTab("assigned")}
+          className={`px-4 py-2 rounded ${activeTab === "assigned" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
         >
-          Tickets Assigned to Me
+          Assigned To Me
         </button>
         <button
-          className={`px-3 py-2 rounded ${activeTab === "created" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
           onClick={() => setActiveTab("created")}
+          className={`px-4 py-2 rounded ${activeTab === "created" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
         >
-          Tickets Created by Me
+          Created By Me
         </button>
       </div>
 
-      {/* TICKET LIST */}
+      {/* Tickets List */}
       <div className="grid gap-4">
-        {ticketsToShow.length === 0 && <div className="text-gray-500">No tickets available.</div>}
-        {ticketsToShow.map((ticket) => {
-          let statusOptions = [];
+        {tickets.length === 0 && <div className="text-gray-500">No tickets available</div>}
+        {tickets.map((t) => (
+          <div key={t.TicketID} className="bg-white p-4 rounded shadow flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div className="flex-1">
+              <div className="font-semibold text-lg mb-1">{t.Issue}</div>
+              <div className="text-sm">Created By: <span className="font-medium">{t.CreatedBy}</span></div>
+              <div className="text-sm">Assigned To: <span className="font-medium">{t.AssignedTo}</span></div>
+              <div className="text-sm">Created Date: <span className="font-medium">{dayjs(t.CreatedDate).format("DD MMM YYYY, HH:mm")}</span></div>
+              <div className="text-sm text-gray-500">Elapsed: {dayjs(t.CreatedDate).fromNow()}</div>
+              <div className="text-sm mt-1">Status: <span className="font-medium">{t.Status}</span></div>
+            </div>
 
-          // Assigned tab: only Open → InProgress
-          if (
-            activeTab === "assigned" &&
-            ticket.AssignedTo === user.name &&
-            ticket.Status !== "Done"
-          ) {
-            statusOptions = ["Open", "InProgress"];
-          }
-
-          // Created tab: only InProgress → Done
-          if (
-            activeTab === "created" &&
-            ticket.CreatedBy === user.name &&
-            ticket.Status === "InProgress"
-          ) {
-            statusOptions = ["InProgress", "Done"];
-          }
-
-          return (
-            <div key={ticket.TicketID} className="p-4 bg-white rounded shadow flex justify-between items-center">
-              <div>
-                <div className="font-semibold">{ticket.Issue}</div>
-                <div className="text-sm text-gray-600">Created By: {ticket.CreatedBy}</div>
-                <div className="text-sm text-gray-600">Assigned To: {ticket.AssignedTo}</div>
-                <div className="text-sm text-gray-600">Status: {ticket.Status}</div>
-                <div className="text-sm text-gray-600">Created: {ticket.CreatedDate}</div>
-              </div>
-              {statusOptions.length > 0 && (
-                <select
-                  className="border p-1 rounded"
-                  disabled={updatingStatus[ticket.TicketID] || ticket.Status === "Done"}
-                  value={ticket.Status}
-                  onChange={(e) => updateStatus(ticket.TicketID, e.target.value)}
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 mt-2 md:mt-0">
+              {t.IssuePhoto && (
+                <button
+                  onClick={() => setModalImage(t.IssuePhoto)}
+                  className="bg-gray-700 text-white px-3 py-1 rounded"
                 >
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </select>
+                  View Image
+                </button>
+              )}
+
+              {activeTab === "assigned" && t.Status === "Pending" && (
+                <button
+                  disabled={updating[t.TicketID]}
+                  onClick={() => updateStatus(t.TicketID, "InProgress")}
+                  className="bg-blue-600 text-white px-3 py-1 rounded"
+                >
+                  {updating[t.TicketID] ? "Updating..." : "Start"}
+                </button>
+              )}
+
+              {activeTab === "created" && t.Status === "InProgress" && (
+                <button
+                  disabled={updating[t.TicketID]}
+                  onClick={() => updateStatus(t.TicketID, "Done")}
+                  className="bg-green-600 text-white px-3 py-1 rounded"
+                >
+                  {updating[t.TicketID] ? "Updating..." : "Mark Done"}
+                </button>
               )}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
+
+      {/* Image Modal */}
+      {modalImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+          <div className="relative">
+            <button
+              onClick={() => setModalImage(null)}
+              className="absolute top-2 right-2 text-white bg-red-600 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold hover:bg-red-700"
+            >
+              &times;
+            </button>
+            <img
+              src={modalImage}
+              alt="Issue"
+              className="max-w-[90vw] max-h-[90vh] rounded shadow-lg object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

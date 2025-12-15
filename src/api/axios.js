@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const instance = axios.create({
-  baseURL: "https://epilbackend.onrender.com/api", // your backend URL
+  baseURL: `${process.env.REACT_APP_BASE_URL}/api`, // your backend URL
   headers: {
     "Content-Type": "application/json",
   },
