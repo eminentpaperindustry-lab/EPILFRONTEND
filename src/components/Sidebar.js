@@ -74,10 +74,10 @@ export default function Sidebar({ mobile }) {
 
   {/* NAVIGATION MENU */}
   <nav className="p-6 space-y-2">
-
+{/* 
       <MenuItem to="/dashboard" icon={FaLifeRing} onClick={closeSidebar}>
       Dashboard
-    </MenuItem>
+    </MenuItem> */}
     <MenuItem to="/delegation" icon={FaTasks} onClick={closeSidebar}>
       Delegation
     </MenuItem>
@@ -120,9 +120,9 @@ export default function Sidebar({ mobile }) {
       </div>
 
       <nav className="p-6 space-y-2">
-        <MenuItem to="/dashboard" icon={FaTasks}>
+        {/* <MenuItem to="/dashboard" icon={FaTasks}>
           Dashboard
-        </MenuItem>
+        </MenuItem> */}
         <MenuItem to="/delegation" icon={FaTasks}>
           Delegation
         </MenuItem>

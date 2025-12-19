@@ -63,10 +63,42 @@ export default function Dashboard() {
     });
   };
 
-  // ---------------------- Helper function for counting ----------------------
+  // ---------------------- Helper function for counting Delegation ----------------------
   const countData = (data, status) => {
     if (!Array.isArray(data)) return 0; // Ensure data is an array
-    return data.filter((item) => item.Status === status).length;
+
+    // Filter tasks based on the status
+    if (status === "Pending") {
+      return data.filter((item) => !item.FinalDate).length; // Tasks with no FinalDate are Pending
+    }
+
+    if (status === "Completed") {
+      return data.filter((item) => item.FinalDate && item.Taskcompletedapproval !== "Approved").length; // Tasks with FinalDate are Completed
+    }
+
+    if (status === "Approved") {
+      return data.filter((item) => item.Taskcompletedapproval === "Approved").length; // Tasks with approved status
+    }
+
+    return data.length; // Default to count all data for Total Assigned
+  };
+
+  // ---------------------- Helper function for counting Checklist ----------------------
+  const countChecklistData = (data, status) => {
+    if (!Array.isArray(data)) return 0; // Ensure data is an array
+
+    // Filter checklists based on the status
+    if (status === "Pending") {
+      console.log(" sami Pending");
+      
+      return data.filter((item) => item.Actual ==="").length; // Checklist with Status "Pending"
+    }
+
+    if (status === "Completed") {
+      return data.filter((item) => item.Actual).length; // Checklist with Status "Completed"
+    }
+
+    return data.length; // Default to count all data for Total Assigned
   };
 
   // ---------------------- Get Week Range for Filter ----------------------
@@ -107,7 +139,9 @@ export default function Dashboard() {
   // ---------------------- Calculate Total Scoring ----------------------
   const totalTasks = filteredDelegations.length;
   const completedTasks = countData(filteredDelegations, "Completed");
-  const totalScoring = totalTasks ? ((completedTasks / totalTasks) * 100).toFixed(2) : 0;
+  const ApprovedTasks = countData(filteredDelegations, "Approved");
+
+  const totalScoring = totalTasks ? (((completedTasks + ApprovedTasks) / totalTasks) * 100).toFixed(2) : 0;
 
   // ---------------------- Render ----------------------
   return (
@@ -126,7 +160,7 @@ export default function Dashboard() {
             ))}
           </select>
 
-              <label>Week:</label>
+          <label>Week:</label>
           <select onChange={handleWeekChange} value={selectedWeek} className="p-2 border rounded">
             {Array.from({ length: 4 }, (_, i) => (
               <option key={i} value={i + 1}>
@@ -137,17 +171,10 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-4">
-              <h3 className="text-2xl font-bold">Total Scoring: </h3>
-        <p className="text-2xl font-bold ">{totalScoring}%</p>
-
+          <h3 className="text-2xl font-bold">Total Scoring: </h3>
+          <p className="text-2xl font-bold">{totalScoring}%</p>
         </div>
       </div>
-
-      {/* Total Scoring Section */}
-      {/* <div className="p-4 bg-gray-100 rounded-md">
-        <h3 className="text-lg font-semibold">Total Scoring</h3>
-        <p className="text-2xl font-bold text-center">{totalScoring}%</p>
-      </div> */}
 
       {/* Delegation Section */}
       <div className="p-4 bg-gray-200 rounded-md">
@@ -162,14 +189,14 @@ export default function Dashboard() {
           </div>
           <div
             className="bg-yellow-100 p-4 rounded-md shadow-md text-center cursor-pointer"
-            onClick={() => toggleModal(filteredDelegations.filter((task) => task.Status === "Pending"), "Pending Tasks")}
+            onClick={() => toggleModal(filteredDelegations.filter((task) => !task.FinalDate), "Pending Tasks")}
           >
             <h3>Pending</h3>
             <p className="text-2xl font-bold">{countData(filteredDelegations, "Pending")}</p>
           </div>
           <div
             className="bg-green-100 p-4 rounded-md shadow-md text-center cursor-pointer"
-            onClick={() => toggleModal(filteredDelegations.filter((task) => task.Status === "Completed"), "Completed Tasks")}
+            onClick={() => toggleModal(filteredDelegations.filter((task) => task.FinalDate), "Completed Tasks")}
           >
             <h3>Completed</h3>
             <p className="text-2xl font-bold">{countData(filteredDelegations, "Completed")}</p>
@@ -200,78 +227,17 @@ export default function Dashboard() {
             onClick={() => toggleModal(filteredChecklists.filter((task) => task.Status === "Pending"), "Pending Checklists")}
           >
             <h3>Pending</h3>
-            <p className="text-2xl font-bold">{countData(filteredChecklists, "Pending")}</p>
+            <p className="text-2xl font-bold">{countChecklistData(filteredChecklists, "Pending")}</p>
           </div>
           <div
             className="bg-green-100 p-4 rounded-md shadow-md text-center cursor-pointer"
             onClick={() => toggleModal(filteredChecklists.filter((task) => task.Status === "Completed"), "Completed Checklists")}
           >
             <h3>Completed</h3>
-            <p className="text-2xl font-bold">{countData(filteredChecklists, "Completed")}</p>
+            <p className="text-2xl font-bold">{countChecklistData(filteredChecklists, "Completed")}</p>
           </div>
         </div>
       </div>
-
-      
-      {/* Support TIcket Section */}
-      <div className="p-4 bg-gray-200 rounded-md">
-        <h2 className="text-xl font-semibold">Support-Ticket </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-10">
-          <div
-            className="bg-blue-100 p-4 rounded-md shadow-md text-center cursor-pointer"
-            onClick={() => toggleModal(filteredChecklists, "Total Assigned Checklists")}
-          >
-            <h3>Total Assigned Ticket</h3>
-            <p className="text-2xl font-bold">{filteredChecklists.length}</p>
-          </div>
-          <div
-            className="bg-yellow-100 p-4 rounded-md shadow-md text-center cursor-pointer"
-            onClick={() => toggleModal(filteredChecklists.filter((task) => task.Status === "Pending"), "Pending Checklists")}
-          >
-            <h3>Assigned Ticket Done</h3>
-            <p className="text-2xl font-bold">{countData(filteredChecklists, "Pending")}</p>
-          </div>
-          <div
-            className="bg-green-100 p-4 rounded-md shadow-md text-center cursor-pointer"
-            onClick={() => toggleModal(filteredChecklists.filter((task) => task.Status === "Completed"), "Completed Checklists")}
-          >
-            <h3>Ticket Created</h3>
-            <p className="text-2xl font-bold">{countData(filteredChecklists, "Completed")}</p>
-          </div>
-        </div>
-      </div>
-
-
-  
-      {/* Help  TIcket Section */}
-      <div className="p-4 bg-gray-200 rounded-md">
-        <h2 className="text-xl font-semibold">Help-Ticket </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-10">
-          <div
-            className="bg-blue-100 p-4 rounded-md shadow-md text-center cursor-pointer"
-            onClick={() => toggleModal(filteredChecklists, "Total Assigned Checklists")}
-          >
-            <h3>Total Assigned Ticket</h3>
-            <p className="text-2xl font-bold">{filteredChecklists.length}</p>
-          </div>
-          <div
-            className="bg-yellow-100 p-4 rounded-md shadow-md text-center cursor-pointer"
-            onClick={() => toggleModal(filteredChecklists.filter((task) => task.Status === "Pending"), "Pending Checklists")}
-          >
-            <h3>Assigned Ticket Done</h3>
-            <p className="text-2xl font-bold">{countData(filteredChecklists, "Pending")}</p>
-          </div>
-          <div
-            className="bg-green-100 p-4 rounded-md shadow-md text-center cursor-pointer"
-            onClick={() => toggleModal(filteredChecklists.filter((task) => task.Status === "Completed"), "Completed Checklists")}
-          >
-            <h3>Ticket Created</h3>
-            <p className="text-2xl font-bold">{countData(filteredChecklists, "Completed")}</p>
-          </div>
-        </div>
-      </div>
-
-
 
       {/* Modal for Detailed View */}
       {showModal && modalData.length > 0 && (
