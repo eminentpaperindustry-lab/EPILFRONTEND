@@ -33,7 +33,7 @@ export default function Delegation() {
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
+    return `${dd}-${mm}-${yyyy}`;
   };
 
   useEffect(() => {
@@ -42,11 +42,11 @@ export default function Delegation() {
         const res = await axios.get("/delegations/");
         const formattedTasks = res.data.map((t) => ({
           ...t,
-          CreatedDate: normalizeDate(t.CreatedDate),
+          CreatedDate: t.CreatedDate,
           Deadline: normalizeDate(t.Deadline),
           Revision1: normalizeDate(t.Revision1),
           Revision2: normalizeDate(t.Revision2),
-          FinalDate: normalizeDate(t.FinalDate),
+          FinalDate: t.FinalDate ,
         }));
         setTasks(formattedTasks);
       } catch (err) {

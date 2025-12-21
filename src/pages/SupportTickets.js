@@ -3,8 +3,12 @@ import axios from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 
 dayjs.extend(relativeTime);
+dayjs.extend(customParseFormat);
+
+const DATE_FORMAT = "DD/MM/YYYY HH:mm:ss"; // Backend ke new format ke liye
 
 export default function SupportTicket() {
   const { user } = useContext(AuthContext);
@@ -42,6 +46,8 @@ export default function SupportTicket() {
         axios.get("/support-tickets/assigned", authHeader),
         axios.get("/support-tickets/created", authHeader),
       ]);
+
+      // Filter out done tickets
       setAssignedTickets((assignedRes.data || []).filter((t) => t.Status !== "Done"));
       setCreatedTickets((createdRes.data || []).filter((t) => t.Status !== "Done"));
     } catch (err) {
@@ -91,6 +97,20 @@ export default function SupportTicket() {
   if (loading) return <div>Loading...</div>;
   const tickets = activeTab === "assigned" ? assignedTickets : createdTickets;
 
+  // Helper: parse backend date correctly
+  const parseDate = (dateStr) => dayjs(dateStr, DATE_FORMAT);
+
+  // Format and calculate time ago
+  const formatDate = (dateStr) => {
+    const date = parseDate(dateStr);
+    return date.format("DD/MM/YYYY HH:mm:ss");
+  };
+
+  const timeAgo = (dateStr) => {
+    const date = parseDate(dateStr);
+    return date.fromNow(); // Relative time (e.g., "2 hours ago")
+  };
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-4">Support Tickets</h2>
@@ -105,15 +125,9 @@ export default function SupportTicket() {
           onChange={(e) => setForm({ ...form, AssignedTo: e.target.value })}
         >
           <option value="">Select Employee</option>
-          {/* {employees.map((e) => (
+          {employees.map((e) => (
             <option key={e.name} value={e.name}>{e.name}</option>
-          ))} */}
-
-              {/* <option value="">Select Employee</option> */}
-          <option value="Mohammad Sami ">Mohammad Sami</option>
-          <option value="SAGAR SONI">SAGAR SONI</option>
-          <option value="Govind">Govind</option>
-          <option value="DEVYANI">DEVYANI</option>
+          ))}
         </select>
 
         <textarea
@@ -167,49 +181,55 @@ export default function SupportTicket() {
       {/* Tickets List */}
       <div className="grid gap-4">
         {tickets.length === 0 && <div className="text-gray-500">No tickets available</div>}
-        {tickets.map((t) => (
-          <div key={t.TicketID} className="bg-white p-4 rounded shadow flex flex-col md:flex-row justify-between items-start md:items-center">
-            <div className="flex-1">
-              <div className="font-semibold text-lg mb-1">{t.Issue}</div>
-              <div className="text-sm">Created By: <span className="font-medium">{t.CreatedBy}</span></div>
-              <div className="text-sm">Assigned To: <span className="font-medium">{t.AssignedTo}</span></div>
-              <div className="text-sm">Created Date: <span className="font-medium">{dayjs(t.CreatedDate).format("DD MMM YYYY, HH:mm")}</span></div>
-              <div className="text-sm text-gray-500">Elapsed: {dayjs(t.CreatedDate).fromNow()}</div>
-              <div className="text-sm mt-1">Status: <span className="font-medium">{t.Status}</span></div>
+        {tickets.map((t) => {
+          const createdDate = formatDate(t.CreatedDate);
+          const doneDate = t.DoneDate ? formatDate(t.DoneDate) : null;
+
+          return (
+            <div key={t.TicketID} className="bg-white p-4 rounded shadow flex flex-col md:flex-row justify-between items-start md:items-center">
+              <div className="flex-1">
+                <div className="font-semibold text-lg mb-1">{t.Issue}</div>
+                <div className="text-sm">Created By: <span className="font-medium">{t.CreatedBy}</span></div>
+                <div className="text-sm">Assigned To: <span className="font-medium">{t.AssignedTo}</span></div>
+                <div className="text-sm">Created Date: <span className="font-medium">{createdDate}</span></div>
+                <div className="text-sm text-gray-500">Elapsed: {timeAgo(t.CreatedDate)}</div>
+                {doneDate && <div className="text-sm">Done Date: <span className="font-medium">{doneDate}</span></div>}
+                <div className="text-sm mt-1">Status: <span className="font-medium">{t.Status}</span></div>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 mt-2 md:mt-0">
+                {t.IssuePhoto && (
+                  <button
+                    onClick={() => setModalImage(t.IssuePhoto)}
+                    className="bg-gray-700 text-white px-3 py-1 rounded"
+                  >
+                    View Image
+                  </button>
+                )}
+
+                {activeTab === "assigned" && t.Status === "Pending" && (
+                  <button
+                    disabled={updating[t.TicketID]}
+                    onClick={() => updateStatus(t.TicketID, "InProgress")}
+                    className="bg-blue-600 text-white px-3 py-1 rounded"
+                  >
+                    {updating[t.TicketID] ? "Updating..." : "Start"}
+                  </button>
+                )}
+
+                {activeTab === "created" && t.Status === "InProgress" && (
+                  <button
+                    disabled={updating[t.TicketID]}
+                    onClick={() => updateStatus(t.TicketID, "Done")}
+                    className="bg-green-600 text-white px-3 py-1 rounded"
+                  >
+                    {updating[t.TicketID] ? "Updating..." : "Mark Done"}
+                  </button>
+                )}
+              </div>
             </div>
-
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 mt-2 md:mt-0">
-              {t.IssuePhoto && (
-                <button
-                  onClick={() => setModalImage(t.IssuePhoto)}
-                  className="bg-gray-700 text-white px-3 py-1 rounded"
-                >
-                  View Image
-                </button>
-              )}
-
-              {activeTab === "assigned" && t.Status === "Pending" && (
-                <button
-                  disabled={updating[t.TicketID]}
-                  onClick={() => updateStatus(t.TicketID, "InProgress")}
-                  className="bg-blue-600 text-white px-3 py-1 rounded"
-                >
-                  {updating[t.TicketID] ? "Updating..." : "Start"}
-                </button>
-              )}
-
-              {activeTab === "created" && t.Status === "InProgress" && (
-                <button
-                  disabled={updating[t.TicketID]}
-                  onClick={() => updateStatus(t.TicketID, "Done")}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  {updating[t.TicketID] ? "Updating..." : "Mark Done"}
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Image Modal */}
