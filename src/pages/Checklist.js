@@ -9,18 +9,23 @@ export default function Checklist() {
   const [activeTab, setActiveTab] = useState("pending");
   const [processingTask, setProcessingTask] = useState(null);
 
+  // -------- NORMALIZE DATE (ignore time) --------
+  const normalizeDate = (d) => {
+    if (!d) return null;
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  };
+
   // ---------------- DATE PARSER ----------------
   const parseDate = (d) => {
     if (!d) return null;
-
     if (/^\d{2}\/\d{2}\/\d{4}/.test(d)) {
       const [date, time] = d.split(" ");
       const [day, mon, yr] = date.split("/");
       return new Date(`${yr}-${mon}-${day}T${time || "00:00:00"}`);
     }
-
     if (/^\d{4}-\d{2}-\d{2}/.test(d)) return new Date(d);
-
     const fallback = new Date(d);
     return isNaN(fallback) ? null : fallback;
   };
@@ -34,6 +39,7 @@ export default function Checklist() {
       setChecklists(res.data || []);
     } catch (err) {
       console.error("Load Error:", err);
+      setChecklists([]);
     } finally {
       setLoading(false);
     }
@@ -47,13 +53,11 @@ export default function Checklist() {
   const markDone = async (TaskID) => {
     try {
       setProcessingTask(TaskID);
-
       await axios.patch(
         `/checklist/done/${TaskID}`,
         {},
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
-
       await loadChecklists();
     } catch (e) {
       console.error("Done Error:", e);
@@ -76,41 +80,65 @@ export default function Checklist() {
   };
 
   // ---------------- FILTER LOGIC ----------------
-  const filteredChecklists = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const { start: weekStart, end: weekEnd } = getWeekRange(today);
+ const filteredChecklists = () => {
+  if (!checklists || !Array.isArray(checklists)) return [];
 
-    return checklists.filter((c) => {
-      const planned = parseDate(c.Planned);
-      const actual = parseDate(c.Actual);
-      if (!planned) return false;
+  const today = normalizeDate(new Date());
+  const { start: weekStart, end: weekEnd } = getWeekRange(today);
 
-      planned.setHours(0, 0, 0, 0);
-      const isDone = !!actual;
-      const freq = c.Freq;
+  return checklists.filter((c) => {
+    if (!c) return false;
 
-      if (activeTab === "pending") {
-        if (isDone) return false;
-        if (freq === "D" && planned < today) return true;
-        if (freq === "W" && planned < weekStart) return true;
-        if (
-          freq === "M" &&
-          (planned.getFullYear() < today.getFullYear() ||
-            (planned.getFullYear() === today.getFullYear() &&
-              planned.getMonth() < today.getMonth()))
-        )
-          return true;
-        return false;
+    const planned = parseDate(c.Planned);
+    if (!planned) return false;
+
+    const plannedDate = normalizeDate(planned);
+    const isDone = !!parseDate(c.Actual);
+    const freq = c.Freq;
+
+    // -------- PENDING --------
+    if (activeTab === "pending") {
+      // Pending = tasks that were supposed to be done in past and still not done
+      if (isDone) return false;
+
+      if (freq === "D" && plannedDate < today) return true;
+      if (freq === "W") {
+        const { start: taskWeekStart, end: taskWeekEnd } = getWeekRange(plannedDate);
+        return taskWeekEnd < today; // task ka week already past
       }
-
-      if (activeTab === "Daily") return freq === "D" && planned.getTime() === today.getTime() && !isDone;
-      if (activeTab === "Weekly") return freq === "W" && !isDone && planned >= weekStart && planned <= weekEnd;
-      if (activeTab === "Monthly") return freq === "M" && !isDone && planned.getMonth() === today.getMonth() && planned.getFullYear() === today.getFullYear();
-
+      if (freq === "M") {
+        return (
+          plannedDate.getFullYear() < today.getFullYear() ||
+          (plannedDate.getFullYear() === today.getFullYear() && plannedDate.getMonth() < today.getMonth())
+        );
+      }
       return false;
-    });
-  };
+    }
+
+    // -------- DAILY --------
+    if (activeTab === "Daily") {
+      return freq === "D" && !isDone && plannedDate.getTime() === today.getTime();
+    }
+
+    // -------- WEEKLY --------
+    if (activeTab === "Weekly") {
+      return freq === "W" && !isDone && plannedDate >= weekStart && plannedDate <= weekEnd;
+    }
+
+    // -------- MONTHLY --------
+    if (activeTab === "Monthly") {
+      return (
+        freq === "M" &&
+        !isDone &&
+        plannedDate.getMonth() === today.getMonth() &&
+        plannedDate.getFullYear() === today.getFullYear()
+      );
+    }
+
+    return false;
+  });
+};
+
 
   if (loading)
     return (
@@ -145,34 +173,34 @@ export default function Checklist() {
 
       {/* Checklist Items */}
       <div className="grid gap-3">
-        {filteredChecklists().map((c) => (
-          <div
-            key={c.TaskID}
-            className="p-3 sm:p-4 bg-white rounded shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center"
-          >
-            <div className="mb-2 sm:mb-0 sm:max-w-[70%]">
-              <div className="font-semibold text-gray-800 text-base sm:text-lg">{c.Task}</div>
-              <div className="text-gray-600 text-sm mt-1">
-                Frequency: {c.Freq === "D" ? "Daily" : c.Freq === "W" ? "Weekly" : "Monthly"}
+        {filteredChecklists().length > 0 ? (
+          filteredChecklists().map((c) => (
+            <div
+              key={c.TaskID}
+              className="p-3 sm:p-4 bg-white rounded shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center"
+            >
+              <div className="mb-2 sm:mb-0 sm:max-w-[70%]">
+                <div className="font-semibold text-gray-800 text-base sm:text-lg">{c.Task}</div>
+                <div className="text-gray-600 text-sm mt-1">
+                  Frequency: {c.Freq === "D" ? "Daily" : c.Freq === "W" ? "Weekly" : "Monthly"}
+                </div>
+                <div className="text-gray-500 text-sm mt-1">Planned: {c.Planned}</div>
               </div>
-              <div className="text-gray-500 text-sm mt-1">Planned: {c.Planned}</div>
+
+              {!c.Actual && (
+                <button
+                  onClick={() => markDone(c.TaskID)}
+                  disabled={processingTask === c.TaskID}
+                  className={`mt-2 sm:mt-0 px-4 sm:px-5 py-1.5 sm:py-2 rounded font-medium text-white transition-colors duration-200 ${
+                    processingTask === c.TaskID ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+                  }`}
+                >
+                  {processingTask === c.TaskID ? "Processing..." : "Mark Done"}
+                </button>
+              )}
             </div>
-
-            {!c.Actual && (
-              <button
-                onClick={() => markDone(c.TaskID)}
-                disabled={processingTask === c.TaskID}
-                className={`mt-2 sm:mt-0 px-4 sm:px-5 py-1.5 sm:py-2 rounded font-medium text-white transition-colors duration-200 ${
-                  processingTask === c.TaskID ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
-                }`}
-              >
-                {processingTask === c.TaskID ? "Processing..." : "Mark Done"}
-              </button>
-            )}
-          </div>
-        ))}
-
-        {filteredChecklists().length === 0 && (
+          ))
+        ) : (
           <p className="text-gray-500 text-center mt-6 text-sm sm:text-base">No data found.</p>
         )}
       </div>
