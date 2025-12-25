@@ -130,9 +130,6 @@ export default function SupportTicket() {
             <option  value={"Govind"}>{"Govind"}</option>
             <option  value={"Mohammad Sami "}>{"Mohammad Sami "}</option>
 
-
-
-
           {/* {employees.map((e) => (
             <option key={e.name} value={e.name}>{e.name}</option>
           ))} */}

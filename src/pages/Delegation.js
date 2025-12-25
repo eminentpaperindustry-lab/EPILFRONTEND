@@ -90,7 +90,7 @@ const normalizeDate = (date) => {
         const formattedTasks = res.data.map((t) => ({
           ...t,
           CreatedDate: t.CreatedDate,
-          Deadline: normalizeDate(t.Deadline),
+          Deadline: t.Deadline,
           Revision1: normalizeDate(t.Revision1),
           Revision2: normalizeDate(t.Revision2),
           FinalDate: t.FinalDate,
