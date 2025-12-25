@@ -3,16 +3,13 @@ import { NavLink } from "react-router-dom";
 import { FaTasks, FaClipboardList, FaLifeRing, FaHeadset, FaBars, FaTimes } from "react-icons/fa";
 import axios from "axios";
 
-// MenuItem Component for displaying the count with the badge
 const MenuItem = ({ to, children, icon: Icon, onClick, count }) => (
   <NavLink
     to={to}
     onClick={onClick}
     className={({ isActive }) =>
       `relative flex items-center gap-3 px-4 py-3 rounded-md transition-colors duration-200 font-medium ${
-        isActive
-          ? "bg-blue-600 text-white shadow-lg"
-          : "text-gray-200 hover:bg-gray-800 hover:text-white"
+        isActive ? "bg-blue-600 text-white shadow-lg" : "text-gray-200 hover:bg-gray-800 hover:text-white"
       }`
     }
   >
@@ -35,7 +32,6 @@ export default function Sidebar({ mobile }) {
   const toggleSidebar = () => setIsOpen(!isOpen);
   const closeSidebar = () => setIsOpen(false);
 
-  // Function to fetch tickets and update the counts
   const loadTickets = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -61,18 +57,15 @@ export default function Sidebar({ mobile }) {
     setLoading(false);
   };
 
-  // Call loadTickets on mount and every 1 hour
   useEffect(() => {
     loadTickets(); // initial load
-
     const interval = setInterval(() => {
       loadTickets();
     }, 900000); // 1 hour in ms
 
-    return () => clearInterval(interval); // cleanup on unmount
+    return () => clearInterval(interval);
   }, []);
 
-  // Mobile Sidebar
   if (mobile) {
     return (
       <>
@@ -111,7 +104,6 @@ export default function Sidebar({ mobile }) {
     );
   }
 
-  // Desktop Sidebar
   return (
     <aside className="h-screen w-64 bg-gray-900 text-white flex flex-col">
       <div className="px-6 py-5 border-b border-gray-800">

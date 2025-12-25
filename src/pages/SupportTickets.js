@@ -125,9 +125,17 @@ export default function SupportTicket() {
           onChange={(e) => setForm({ ...form, AssignedTo: e.target.value })}
         >
           <option value="">Select Employee</option>
-          {employees.map((e) => (
+            <option  value={"SAGAR SONI"}>{"SAGAR SONI"}</option>
+            <option  value={"DEVYANI"}>{"DEVYANI"}</option>
+            <option  value={"Govind"}>{"Govind"}</option>
+            <option  value={"Mohammad Sami "}>{"Mohammad Sami "}</option>
+
+
+
+
+          {/* {employees.map((e) => (
             <option key={e.name} value={e.name}>{e.name}</option>
-          ))}
+          ))} */}
         </select>
 
         <textarea

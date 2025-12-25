@@ -19,22 +19,69 @@ export default function Delegation() {
   const [form, setForm] = useState({
     TaskName: "",
     Deadline: "",
-    Priority: "",
+    Priority: "High",
     Notes: "",
   });
 
   // -----------------------
   // Universal Date Formatter
   // -----------------------
-  const normalizeDate = (date) => {
-    if (!date) return "";
-    const d = new Date(date);
-    if (isNaN(d)) return ""; // Invalid date
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${dd}-${mm}-${yyyy}`;
-  };
+  // const normalizeDate = (date) => {
+  //   if (!date) return "";
+  //   const d = new Date(date);
+  //   if (isNaN(d)) return ""; // Invalid date
+  //   const yyyy = d.getFullYear();
+  //   const mm = String(d.getMonth() + 1).padStart(2, "0");
+  //   const dd = String(d.getDate()).padStart(2, "0");
+  //   return `${dd}-${mm}-${yyyy}`;
+  // };
+
+
+function formatDateDDMMYYYYHHMMSS(date = new Date()) {
+  // Convert to IST (UTC + 5:30)
+  const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(utc + istOffset);
+
+  const dd = String(istDate.getDate()).padStart(2, "0");
+  const mm = String(istDate.getMonth() + 1).padStart(2, "0");
+  const yyyy = istDate.getFullYear();
+  const hh = String(istDate.getHours()).padStart(2, "0");
+  const min = String(istDate.getMinutes()).padStart(2, "0");
+  const ss = String(istDate.getSeconds()).padStart(2, "0");
+
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
+}
+  
+const normalizeDate = (date) => {
+  if (!date) return "";
+
+  // Convert to Date object (current date if date is empty)
+  const d = new Date(date || Date.now()); // If no date is passed, use current date/time.
+  if (isNaN(d)) return ""; // Invalid date
+
+  // Adjust time to IST (UTC +5:30)
+  const IST_OFFSET = 5.5 * 60; // IST is UTC+5:30, so offset in minutes is 330 minutes
+  
+  // Get the UTC time and convert it to IST
+  const utcMinutes = d.getMinutes() + d.getHours() * 60 + d.getUTCMinutes() - d.getMinutes();
+  const adjustedMinutes = utcMinutes + IST_OFFSET; // Apply IST offset
+  const adjustedDate = new Date(d.setMinutes(adjustedMinutes));
+
+  const yyyy = adjustedDate.getFullYear();
+  const mm = String(adjustedDate.getMonth() + 1).padStart(2, "0");
+  const dd = String(adjustedDate.getDate()).padStart(2, "0");
+  const hours = String(adjustedDate.getHours()).padStart(2, "0");
+  const minutes = String(adjustedDate.getMinutes()).padStart(2, "0");
+  const seconds = String(adjustedDate.getSeconds()).padStart(2, "0");
+
+  // return `${dd}/${mm}/${yyyy} ${hours}:${minutes}:${seconds}`;
+
+  return `${dd}/${mm}/${yyyy}`
+};
+
+
+
 
   useEffect(() => {
     async function loadTasks() {
@@ -46,7 +93,7 @@ export default function Delegation() {
           Deadline: normalizeDate(t.Deadline),
           Revision1: normalizeDate(t.Revision1),
           Revision2: normalizeDate(t.Revision2),
-          FinalDate: t.FinalDate ,
+          FinalDate: t.FinalDate,
         }));
         setTasks(formattedTasks);
       } catch (err) {
@@ -56,14 +103,18 @@ export default function Delegation() {
     }
     if (user) loadTasks();
   }, [user]);
-
+  
   const createTask = async () => {
     if (!form.TaskName || !form.Deadline) return;
 
     setLoadingTaskId("create");
     try {
-      const res = await axios.post("/delegations/", form);
-      const today = normalizeDate(new Date());
+      const res = await axios.post("/delegations/", {
+    TaskName:form.TaskName,
+    Deadline:normalizeDate(form.Deadline),
+    Priority: "High",
+    Notes: "",
+  });
 
       setTasks([
         {
@@ -71,7 +122,7 @@ export default function Delegation() {
           Name: user.name,
           TaskName: form.TaskName,
           Deadline: normalizeDate(form.Deadline),
-          CreatedDate: today,
+          CreatedDate:formatDateDDMMYYYYHHMMSS(),
           Revision1: "",
           Revision2: "",
           FinalDate: "",
@@ -105,7 +156,7 @@ export default function Delegation() {
             ? {
                 ...t,
                 Status: "Completed",
-                FinalDate: today,
+                FinalDate: formatDateDDMMYYYYHHMMSS(),
                 Taskcompletedapproval: "",
               }
             : t
@@ -121,17 +172,18 @@ export default function Delegation() {
   const openShiftPicker = (task) => {
     setShiftTask(task);
     setShiftDate("");
+    setForm({...form,Deadline:""})
   };
 
   const confirmShift = async () => {
-    if (!shiftDate) return;
+    if (!form.Deadline) return;
 
     setLoadingShiftBtn(true);
     const revisionField = shiftTask.Revisions === 0 ? "Revision1" : "Revision2";
 
     try {
       await axios.patch(`/delegations/shift/${shiftTask.TaskID}`, {
-        newDeadline: shiftDate,
+        newDeadline: normalizeDate(form.Deadline),
         revisionField,
       });
 
@@ -140,8 +192,8 @@ export default function Delegation() {
           t.TaskID === shiftTask.TaskID
             ? {
                 ...t,
-                [revisionField]: normalizeDate(shiftDate),
-                Deadline: normalizeDate(shiftDate),
+                [revisionField]: normalizeDate(form.Deadline),
+                Deadline: normalizeDate(form.Deadline),
                 Revisions: t.Revisions + 1,
                 Status: "Shifted",
               }
@@ -176,7 +228,7 @@ export default function Delegation() {
         );
 
   if (loading) return <div className="p-6 text-lg">Loading...</div>;
-
+  
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto">
       {/* Header */}
@@ -215,19 +267,34 @@ export default function Delegation() {
         <div className="bg-white p-4 rounded shadow mb-6 border">
           <h3 className="text-lg font-semibold mb-3">Create New Task</h3>
           <div className="grid gap-3">
-            <input
-              className="w-full border p-2 rounded"
-              placeholder="Task Name"
-              value={form.TaskName}
-              onChange={(e) => setForm({ ...form, TaskName: e.target.value })}
-            />
-            <input
-              type="date"
-              className="w-full border p-2 rounded"
-              value={form.Deadline}
-              onChange={(e) => setForm({ ...form, Deadline: e.target.value })}
-            />
-            <select
+            
+      <div>
+  <label htmlFor="taskName" className="block text-sm font-semibold mb-2">
+    Task Name
+  </label>
+  <input
+    id="taskName"
+    className="w-full border p-2 rounded"
+    placeholder="Task Name"
+    value={form.TaskName}
+    onChange={(e) => setForm({ ...form, TaskName: e.target.value })}
+  />
+</div>
+
+<div className="mt-4">
+  <label htmlFor="planDate" className="block text-sm font-semibold mb-2">
+    Plan Date
+  </label>
+  <input
+    id="planDate"
+    type="date"
+    className="w-full border p-2 rounded"
+    value={form.Deadline}
+    onChange={(e) => setForm({ ...form, Deadline: e.target.value })}
+  />
+</div>
+
+            {/* <select
               className="w-full border p-2 rounded"
               value={form.Priority}
               onChange={(e) => setForm({ ...form, Priority: e.target.value })}
@@ -242,7 +309,7 @@ export default function Delegation() {
               placeholder="Notes"
               value={form.Notes}
               onChange={(e) => setForm({ ...form, Notes: e.target.value })}
-            />
+            /> */}
             <div className="flex gap-3">
               <button
                 className="bg-blue-600 text-white px-4 py-2 rounded"
@@ -272,19 +339,16 @@ export default function Delegation() {
                 <div className="text-sm text-gray-600">
                   Created: {task.CreatedDate || "—"} <br />
                   Deadline: {task.Deadline || "—"} <br />
-                  {task.Revision1 && `Rev1: ${task.Revision1} | `}
-                  {task.Revision2 && `Rev2: ${task.Revision2} | `}
+                  {/* {task.Revision1 && `Rev1: ${task.Revision1} | `}
+                  {task.Revision2 && `Rev2: ${task.Revision2} | `} */}
                   Completed: {task.FinalDate || "—"}
                 </div>
                 <div className="text-sm text-gray-600">
-                  Priority: {task.Priority || "Normal"}
+                  Task Revision: {task.Revisions||"0"}
                 </div>
-                {task.Status === "Completed" &&
-                  // (task.Taskcompletedapproval === "" ||
-                  //   task.Taskcompletedapproval === "NotApproved") && 
-                    (
-                    <div className="text-sm text-red-600">Need To Approved</div>
-                  )}
+                {task.Status === "Completed" && (
+                  <div className="text-sm text-red-600">Need To Approve</div>
+                )}
               </div>
               <span
                 className={`px-2 py-1 rounded text-sm ${
@@ -314,9 +378,9 @@ export default function Delegation() {
                   <button
                     onClick={() => openShiftPicker(task)}
                     className="bg-yellow-600 text-white px-3 py-1 rounded"
-                    disabled={task.Revisions >= 2}
+                    // disabled={task.Revisions >= 2}
                   >
-                    {task.Revisions >= 2 ? "Max Shifts Reached" : "Shift Deadline"}
+                    {"Shift Deadline"}
                   </button>
                 </>
               )}
@@ -335,8 +399,11 @@ export default function Delegation() {
             <input
               type="date"
               className="w-full border p-2 rounded mb-3"
-              value={shiftDate}
-              onChange={(e) => setShiftDate(e.target.value)}
+              value={form.Deadline}
+              // onChange={(e) => setShiftDate(e.target.value)}
+              onChange={(e) => setForm({ ...form, Deadline: e.target.value })}
+
+
             />
             <div className="flex gap-3 justify-end">
               <button

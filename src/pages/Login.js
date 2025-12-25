@@ -1,29 +1,35 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const { login } = useContext(AuthContext);
+  const { login, user } = useContext(AuthContext); // Get the current user from context
   const navigate = useNavigate();
+
+  // If user is already logged in, redirect them to the /delegation page
+  useEffect(() => {
+    if (user) {
+      navigate("/delegation");
+    }
+  }, [user, navigate]);
 
   const [employeeID, setEmployeeID] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError(""); // Reset the error state before attempting login
 
     try {
       await login(employeeID, password);
-
       // ✅ SUCCESSFUL LOGIN → REDIRECT TO PORTAL
       navigate("/delegation");
-
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
+      setError(err.response?.data?.error || err.message || "Login failed");
     }
 
     setLoading(false);
@@ -32,7 +38,6 @@ export default function Login() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white shadow-lg rounded-lg p-10 w-96">
-        
         <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">
           Employee Login
         </h2>
@@ -54,13 +59,21 @@ export default function Login() {
           />
 
           <label className="text-gray-700 font-medium">Password</label>
-          <input
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 p-2 rounded mb-6 mt-1 focus:ring-2 focus:ring-blue-400 outline-none"
-          />
+          <div className="relative mb-4 mt-1">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter password"
+              className="w-full border border-gray-300 p-2 rounded pr-10 focus:ring-2 focus:ring-blue-400 outline-none"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <span
+              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 select-none"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </span>
+          </div>
 
           <button
             type="submit"
