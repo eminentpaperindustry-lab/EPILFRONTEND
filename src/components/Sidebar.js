@@ -92,6 +92,8 @@ export default function Sidebar({ mobile }) {
           </div>
 
           <nav className="p-6 space-y-2">
+        {/* <MenuItem to="/dashboard" icon={FaTasks} count={0}>Dashboard</MenuItem> */}
+
             <MenuItem to="/delegation" icon={FaTasks} onClick={closeSidebar}>Delegation</MenuItem>
             <MenuItem to="/checklist" icon={FaClipboardList} onClick={closeSidebar}>Checklist</MenuItem>
             <MenuItem to="/support-ticket" icon={FaHeadset} onClick={closeSidebar} count={supportTicketCount}>Support Ticket</MenuItem>
@@ -112,6 +114,8 @@ export default function Sidebar({ mobile }) {
       </div>
 
       <nav className="p-6 space-y-2">
+        {/* <MenuItem to="/dashboard" icon={FaTasks} count={0}>Dashboard</MenuItem> */}
+
         <MenuItem to="/delegation" icon={FaTasks} count={0}>Delegation</MenuItem>
         <MenuItem to="/checklist" icon={FaClipboardList} count={0}>Checklist</MenuItem>
         <MenuItem to="/support-ticket" icon={FaHeadset} count={supportTicketCount}>Support Ticket</MenuItem>
