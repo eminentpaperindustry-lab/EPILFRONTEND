@@ -14,9 +14,7 @@ export default function Delegation() {
 
   const [loadingTaskId, setLoadingTaskId] = useState(null);
   const [loadingShiftBtn, setLoadingShiftBtn] = useState(false);
-
   const [shiftTask, setShiftTask] = useState(null);
-  const [shiftDate, setShiftDate] = useState("");
 
   const [form, setForm] = useState({
     TaskName: "",
@@ -45,84 +43,63 @@ export default function Delegation() {
     const d = new Date(date || Date.now());
     if (isNaN(d)) return "";
 
-    const IST_OFFSET = 5.5 * 60;
-    const utcMinutes = d.getMinutes() + d.getHours() * 60 + d.getUTCMinutes() - d.getMinutes();
-    const adjustedMinutes = utcMinutes + IST_OFFSET;
-    const adjustedDate = new Date(d.setMinutes(adjustedMinutes));
-
-    const yyyy = adjustedDate.getFullYear();
-    const mm = String(adjustedDate.getMonth() + 1).padStart(2, "0");
-    const dd = String(adjustedDate.getDate()).padStart(2, "0");
-    const hours = String(adjustedDate.getHours()).padStart(2, "0");
-    const minutes = String(adjustedDate.getMinutes()).padStart(2, "0");
-    const seconds = String(adjustedDate.getSeconds()).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
 
     return `${dd}/${mm}/${yyyy}`;
   };
 
+  // ---------------- Load Tasks from API ----------------
   const loadTasks = async () => {
-  try {
-    const res = await axios.get("/delegations/");
-    const formattedTasks = res.data.map((t) => ({
-      ...t,
-      CreatedDate: t.CreatedDate,
-      Deadline: t.Deadline,
-      Revision1: normalizeDate(t.Revision1),
-      Revision2: normalizeDate(t.Revision2),
-      FinalDate: t.FinalDate,
-    }));
-    setTasks(formattedTasks);
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to load tasks");
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true); // show loading for every fetch
+    try {
+      const res = await axios.get("/delegations/");
+      const formattedTasks = res.data.map((t) => ({
+        ...t,
+        CreatedDate: t.CreatedDate,
+        Deadline: t.Deadline,
+        Revision1: normalizeDate(t.Revision1),
+        Revision2: normalizeDate(t.Revision2),
+        FinalDate: t.FinalDate,
+      }));
+      setTasks(formattedTasks);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load tasks");
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // ---------------- Load tasks on mount AND tab change ----------------
   useEffect(() => {
-  if (user) loadTasks();
-}, [user]);
+    if (user) loadTasks();
+  }, [user, activeTab]); // triggers on tab change
 
-
+  // ---------------- Create Task ----------------
   const createTask = async () => {
-    if (!form.TaskName || !form.Deadline) return toast.warn("Task Name & Deadline required");
+    if (!form.TaskName || !form.Deadline)
+      return toast.warn("Task Name & Deadline required");
 
     setLoadingTaskId("create");
     try {
       const res = await axios.post("/delegations/", {
         TaskName: form.TaskName,
         Deadline: normalizeDate(form.Deadline),
-        Priority: "High",
-        Notes: "",
+        Priority: form.Priority || "High",
+        Notes: form.Notes || "",
       });
 
-       if(res.data.ok === true){
-      // setTasks([
-      //   {
-      //     TaskID: res.data.TaskID,
-      //     Name: user.name,
-      //     TaskName: form.TaskName,
-      //     Deadline: normalizeDate(form.Deadline),
-      //     CreatedDate: formatDateDDMMYYYYHHMMSS(),
-      //     Revision1: "",
-      //     Revision2: "",
-      //     FinalDate: "",
-      //     Revisions: 0,
-      //     Priority: form.Priority,
-      //     Status: "Pending",
-      //     Followup: form.Notes,
-      //     Taskcompletedapproval: "",
-      //   },
-      //   ...tasks,
-      // ]);
-    loadTasks();
-setShowCreate(false);
-      setForm({ TaskName: "", Deadline: "", Priority: "", Notes: "" });
-      toast.success("Task created successfully");
-       }else{
- toast.error("Failed to create task Due To Technical Issue , Please ReCreate");
-       }      
+      if (res.data.ok === true) {
+        await loadTasks(); // reload from API
+        setShowCreate(false);
+        setForm({ TaskName: "", Deadline: "", Priority: "", Notes: "" });
+        toast.success("Task created successfully");
+      } else {
+        toast.error("Failed to create task due to technical issue");
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to create task");
@@ -130,23 +107,14 @@ setShowCreate(false);
       setLoadingTaskId(null);
     }
   };
+
+  // ---------------- Mark Done ----------------
   const handleDone = async (taskID) => {
     setLoadingTaskId(taskID);
     try {
       await axios.patch(`/delegations/done/${taskID}`);
-      setTasks(
-        tasks.map((t) =>
-          t.TaskID === taskID
-            ? {
-                ...t,
-                Status: "Completed",
-                FinalDate: formatDateDDMMYYYYHHMMSS(),
-                Taskcompletedapproval: "",
-              }
-            : t
-        )
-      );
       toast.success("Task marked as completed");
+      await loadTasks(); // reload from API
     } catch (err) {
       console.error(err);
       toast.error("Failed to mark task as done");
@@ -155,9 +123,9 @@ setShowCreate(false);
     }
   };
 
+  // ---------------- Shift Deadline ----------------
   const openShiftPicker = (task) => {
     setShiftTask(task);
-    setShiftDate("");
     setForm({ ...form, Deadline: "" });
   };
 
@@ -173,25 +141,9 @@ setShowCreate(false);
         revisionField,
       });
 
-
-
-      setTasks(
-        tasks.map((t) =>
-          t.TaskID === shiftTask.TaskID
-            ? {
-                ...t,
-                [revisionField]: normalizeDate(form.Deadline),
-                Deadline: normalizeDate(form.Deadline),
-                Revisions: t.Revisions + 1,
-                Status: "Shifted",
-              }
-            : t
-        )
-      );
-
-      setShiftTask(null);
-      setShiftDate("");
       toast.success("Deadline shifted successfully");
+      setShiftTask(null);
+      await loadTasks(); // reload from API
     } catch (err) {
       console.error(err);
       toast.error("Failed to shift deadline");
@@ -200,24 +152,24 @@ setShowCreate(false);
     }
   };
 
-  const filteredTasks =
-    activeTab === "pending"
-      ? tasks.filter(
-          (t) =>
-            (t.Status === "Pending" || t.Status === "Shifted") &&
-            !t.FinalDate &&
-            (t.Taskcompletedapproval === "" || t.Taskcompletedapproval === "Pending") &&
-            t.Taskcompletedapproval !== "Approved"
-        )
-      : tasks.filter(
-          (t) =>
-            t.Status === "Completed" &&
-            t.FinalDate &&
-            (t.Taskcompletedapproval === "" || t.Taskcompletedapproval === "Pending") &&
-            t.Taskcompletedapproval !== "Approved"
-        );
-
-  if (loading) return <div className="p-6 text-lg">Loading...</div>;
+  // ---------------- Filter Tasks for Active Tab ----------------
+  const filteredTasks = tasks.filter((t) => {
+    if (activeTab === "pending") {
+      return (
+        (t.Status === "Pending" || t.Status === "Shifted") &&
+        !t.FinalDate &&
+        (t.Taskcompletedapproval === "" || t.Taskcompletedapproval === "Pending") &&
+        t.Taskcompletedapproval !== "Approved"
+      );
+    } else {
+      return (
+        t.Status === "Completed" &&
+        t.FinalDate &&
+        (t.Taskcompletedapproval === "" || t.Taskcompletedapproval === "Pending") &&
+        t.Taskcompletedapproval !== "Approved"
+      );
+    }
+  });
 
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto">
@@ -259,11 +211,8 @@ setShowCreate(false);
           <h3 className="text-lg font-semibold mb-3">Create New Task</h3>
           <div className="grid gap-3">
             <div>
-              <label htmlFor="taskName" className="block text-sm font-semibold mb-2">
-                Task Name
-              </label>
+              <label className="block text-sm font-semibold mb-2">Task Name</label>
               <input
-                id="taskName"
                 className="w-full border p-2 rounded"
                 placeholder="Task Name"
                 value={form.TaskName}
@@ -272,11 +221,8 @@ setShowCreate(false);
             </div>
 
             <div className="mt-4">
-              <label htmlFor="planDate" className="block text-sm font-semibold mb-2">
-                Plan Date
-              </label>
+              <label className="block text-sm font-semibold mb-2">Plan Date</label>
               <input
-                id="planDate"
                 type="date"
                 className="w-full border p-2 rounded"
                 value={form.Deadline}
@@ -303,64 +249,68 @@ setShowCreate(false);
         </div>
       )}
 
-      {/* Task List (scrollable) */}
-      <div className="grid gap-4 max-h-[60vh] overflow-y-auto p-1">
-        {filteredTasks.length === 0 && (
-          <div className="text-center text-gray-500 mt-10">No tasks found.</div>
-        )}
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center p-6 text-lg text-gray-600">Loading tasks...</div>
+      )}
 
-        {filteredTasks.map((task) => (
-          <div key={task.TaskID} className="p-4 bg-white rounded shadow border">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="font-semibold text-lg">{task.TaskName}</div>
-                <div className="text-sm text-gray-600">
-                  Created: {task.CreatedDate || "—" }, <span/><span/>
-                  Deadline: {task.Deadline || "—"},<span/>  <span />
-                  Completed: {task.FinalDate || "—"},<span/> <span/> Task Revision: {task.Revisions || "0"}
+      {/* Task List (scrollable) */}
+      {!loading && (
+        <div className="grid gap-4 max-h-[60vh] overflow-y-auto p-1">
+          {filteredTasks.length === 0 && (
+            <div className="text-center text-gray-500 mt-10">No tasks found.</div>
+          )}
+
+          {filteredTasks.map((task) => (
+            <div key={task.TaskID} className="p-4 bg-white rounded shadow border">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-semibold text-lg">{task.TaskName}</div>
+                  <div className="text-sm text-gray-600">
+                    Created: {task.CreatedDate || "—"}, Deadline: {task.Deadline || "—"}, Completed: {task.FinalDate || "—"}, Revision: {task.Revisions || 0}
+                  </div>
+                  {task.Status === "Completed" && (
+                    <div className="text-sm text-red-600">Need To Approve</div>
+                  )}
                 </div>
-                {/* <div className="text-sm text-gray-600">Task Revision: {task.Revisions || "0"}</div> */}
-                {task.Status === "Completed" && (
-                  <div className="text-sm text-red-600">Need To Approve</div>
+                <span
+                  className={`px-2 py-1 rounded text-sm ${
+                    task.Status === "Completed"
+                      ? "bg-green-100 text-green-700"
+                      : task.Status === "Shifted"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-blue-100 text-blue-700"
+                  }`}
+                >
+                  {task.Status}
+                </span>
+              </div>
+
+              {/* Buttons only in pending tab */}
+              <div className="flex gap-3 mt-3 flex-wrap">
+                {activeTab === "pending" && !task.FinalDate && (
+                  <>
+                    <button
+                      onClick={() => handleDone(task.TaskID)}
+                      className="bg-green-600 text-white px-3 py-1 rounded"
+                      disabled={loadingTaskId === task.TaskID}
+                    >
+                      {loadingTaskId === task.TaskID ? "Processing..." : "Mark Done"}
+                    </button>
+
+                    <button
+                      onClick={() => openShiftPicker(task)}
+                      className="bg-yellow-600 text-white px-3 py-1 rounded"
+                    >
+                      Shift Deadline
+                    </button>
+                  </>
                 )}
               </div>
-              <span
-                className={`px-2 py-1 rounded text-sm ${
-                  task.Status === "Completed"
-                    ? "bg-green-100 text-green-700"
-                    : task.Status === "Shifted"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-blue-100 text-blue-700"
-                }`}
-              >
-                {task.Status}
-              </span>
             </div>
-
-            {/* Buttons only in pending tab */}
-            <div className="flex gap-3 mt-3 flex-wrap">
-              {activeTab === "pending" && !task.FinalDate && (
-                <>
-                  <button
-                    onClick={() => handleDone(task.TaskID)}
-                    className="bg-green-600 text-white px-3 py-1 rounded"
-                    disabled={loadingTaskId === task.TaskID}
-                  >
-                    {loadingTaskId === task.TaskID ? "Processing..." : "Mark Done"}
-                  </button>
-
-                  <button
-                    onClick={() => openShiftPicker(task)}
-                    className="bg-yellow-600 text-white px-3 py-1 rounded"
-                  >
-                    Shift Deadline
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Shift Modal */}
       {shiftTask && (
