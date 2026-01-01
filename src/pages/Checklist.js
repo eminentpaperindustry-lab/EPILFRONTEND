@@ -80,65 +80,63 @@ export default function Checklist() {
   };
 
   // ---------------- FILTER LOGIC ----------------
- const filteredChecklists = () => {
-  if (!checklists || !Array.isArray(checklists)) return [];
+  const filteredChecklists = () => {
+    if (!checklists || !Array.isArray(checklists)) return [];
 
-  const today = normalizeDate(new Date());
-  const { start: weekStart, end: weekEnd } = getWeekRange(today);
+    const today = normalizeDate(new Date());
+    const { start: weekStart, end: weekEnd } = getWeekRange(today);
 
-  return checklists.filter((c) => {
-    if (!c) return false;
+    return checklists.filter((c) => {
+      if (!c) return false;
 
-    const planned = parseDate(c.Planned);
-    if (!planned) return false;
+      const planned = parseDate(c.Planned);
+      if (!planned) return false;
 
-    const plannedDate = normalizeDate(planned);
-    const isDone = !!parseDate(c.Actual);
-    const freq = c.Freq;
+      const plannedDate = normalizeDate(planned);
+      const isDone = !!parseDate(c.Actual);
+      const freq = c.Freq;
 
-    // -------- PENDING --------
-    if (activeTab === "pending") {
-      // Pending = tasks that were supposed to be done in past and still not done
-      if (isDone) return false;
+      // -------- PENDING --------
+      if (activeTab === "pending") {
+        if (isDone) return false;
 
-      if (freq === "D" && plannedDate < today) return true;
-      if (freq === "W") {
-        const { start: taskWeekStart, end: taskWeekEnd } = getWeekRange(plannedDate);
-        return taskWeekEnd < today; // task ka week already past
+        if (freq === "D" && plannedDate < today) return true;
+        if (freq === "W") {
+          const { start: taskWeekStart, end: taskWeekEnd } = getWeekRange(plannedDate);
+          return taskWeekEnd < today;
+        }
+        if (freq === "M") {
+          return (
+            plannedDate.getFullYear() < today.getFullYear() ||
+            (plannedDate.getFullYear() === today.getFullYear() && plannedDate.getMonth() < today.getMonth())
+          );
+        }
+        return false;
       }
-      if (freq === "M") {
+
+      // -------- DAILY --------
+      if (activeTab === "Daily") {
+        return freq === "D" && !isDone && plannedDate.getTime() === today.getTime();
+      }
+
+      // -------- WEEKLY --------
+      if (activeTab === "Weekly") {
+        return freq === "W" && !isDone && plannedDate >= weekStart && plannedDate <= weekEnd;
+      }
+
+      // -------- MONTHLY --------
+      if (activeTab === "Monthly") {
         return (
-          plannedDate.getFullYear() < today.getFullYear() ||
-          (plannedDate.getFullYear() === today.getFullYear() && plannedDate.getMonth() < today.getMonth())
+          freq === "M" &&
+          !isDone &&
+          plannedDate.getMonth() === today.getMonth() &&
+          plannedDate.getFullYear() === today.getFullYear()
         );
       }
+
       return false;
-    }
-
-    // -------- DAILY --------
-    if (activeTab === "Daily") {
-      return freq === "D" && !isDone && plannedDate.getTime() === today.getTime();
-    }
-
-    // -------- WEEKLY --------
-    if (activeTab === "Weekly") {
-      return freq === "W" && !isDone && plannedDate >= weekStart && plannedDate <= weekEnd;
-    }
-
-    // -------- MONTHLY --------
-    if (activeTab === "Monthly") {
-      return (
-        freq === "M" &&
-        !isDone &&
-        plannedDate.getMonth() === today.getMonth() &&
-        plannedDate.getFullYear() === today.getFullYear()
-      );
-    }
-
-    return false;
-  });
-};
-
+    });
+  };
 
   if (loading)
     return (
@@ -171,8 +169,8 @@ export default function Checklist() {
         ))}
       </div>
 
-      {/* Checklist Items */}
-      <div className="grid gap-3">
+      {/* Checklist Items (scrollable) */}
+      <div className="grid gap-3 max-h-[60vh] overflow-y-auto pr-2">
         {filteredChecklists().length > 0 ? (
           filteredChecklists().map((c) => (
             <div
@@ -192,7 +190,9 @@ export default function Checklist() {
                   onClick={() => markDone(c.TaskID)}
                   disabled={processingTask === c.TaskID}
                   className={`mt-2 sm:mt-0 px-4 sm:px-5 py-1.5 sm:py-2 rounded font-medium text-white transition-colors duration-200 ${
-                    processingTask === c.TaskID ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+                    processingTask === c.TaskID
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-green-600 hover:bg-green-700"
                   }`}
                 >
                   {processingTask === c.TaskID ? "Processing..." : "Mark Done"}

@@ -125,9 +125,9 @@ export default function SupportTicket() {
           onChange={(e) => setForm({ ...form, AssignedTo: e.target.value })}
         >
           <option value="">Select Employee</option>
-            <option  value={"SAGAR SONI"}>{"SAGAR SONI"}</option>
-            <option  value={"DEVYANI"}>{"DEVYANI"}</option>
-            <option  value={"Govind"}>{"Govind"}</option>
+            <option  value={"Sagar Soni"}>{"SAGAR SONI"}</option>
+            <option  value={"Devyani Bhatt"}>{"Devyani Bhatt"}</option>
+            <option  value={"Govind Vora"}>{"Govind Vora"}</option>
             <option  value={"Mohammad Sami "}>{"Mohammad Sami "}</option>
 
           {/* {employees.map((e) => (
