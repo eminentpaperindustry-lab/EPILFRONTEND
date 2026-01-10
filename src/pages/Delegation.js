@@ -15,6 +15,7 @@ export default function Delegation() {
   const [loadingTaskId, setLoadingTaskId] = useState(null);
   const [loadingShiftBtn, setLoadingShiftBtn] = useState(false);
   const [shiftTask, setShiftTask] = useState(null);
+const [assignBy, setAssignBy] = useState("Ritesh Agarwal");
 
   const [form, setForm] = useState({
     TaskName: "",
@@ -79,34 +80,69 @@ export default function Delegation() {
   }, [user, activeTab]); // triggers on tab change
 
   // ---------------- Create Task ----------------
+  // const createTask = async () => {
+  //   if (!form.TaskName || !form.Deadline)
+  //     return toast.warn("Task Name & Deadline required");
+
+  //   setLoadingTaskId("create");
+  //   try {
+  //     const res = await axios.post("/delegations/", {
+  //       TaskName: form.TaskName,
+  //       Deadline: normalizeDate(form.Deadline),
+  //       Priority: form.Priority || "High",
+  //       Notes: form.Notes || "",
+  //     });
+
+  //     if (res.data.ok === true) {
+  //       await loadTasks(); // reload from API
+  //       setShowCreate(false);
+  //       setForm({ TaskName: "", Deadline: "", Priority: "", Notes: "" });
+  //       toast.success("Task created successfully");
+  //     } else {
+  //       toast.error("Failed to create task due to technical issue");
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to create task");
+  //   } finally {
+  //     setLoadingTaskId(null);
+  //   }
+  // };
+
   const createTask = async () => {
-    if (!form.TaskName || !form.Deadline)
-      return toast.warn("Task Name & Deadline required");
+  if (!form.TaskName || !form.Deadline)
+    return toast.warn("Task Name & Deadline required");
 
-    setLoadingTaskId("create");
-    try {
-      const res = await axios.post("/delegations/", {
-        TaskName: form.TaskName,
-        Deadline: normalizeDate(form.Deadline),
-        Priority: form.Priority || "High",
-        Notes: form.Notes || "",
-      });
+  if (!assignBy)
+    return toast.warn("Please select Assign By");
 
-      if (res.data.ok === true) {
-        await loadTasks(); // reload from API
-        setShowCreate(false);
-        setForm({ TaskName: "", Deadline: "", Priority: "", Notes: "" });
-        toast.success("Task created successfully");
-      } else {
-        toast.error("Failed to create task due to technical issue");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to create task");
-    } finally {
-      setLoadingTaskId(null);
+  setLoadingTaskId("create");
+  try {
+    const res = await axios.post("/delegations/", {
+      TaskName: form.TaskName,
+      Deadline: normalizeDate(form.Deadline),
+      Priority: form.Priority || "High",
+      Notes: form.Notes || "",
+      AssignBy: assignBy, // ✅ IMPORTANT
+    });
+
+    if (res.data.ok === true) {
+      await loadTasks();
+      setShowCreate(false);
+      setForm({ TaskName: "", Deadline: "", Priority: "", Notes: "" });
+      setAssignBy("");
+      toast.success("Task created successfully");
+    } else {
+      toast.error("Failed to create task due to technical issue");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to create task");
+  } finally {
+    setLoadingTaskId(null);
+  }
+};
+
 
   // ---------------- Mark Done ----------------
   const handleDone = async (taskID) => {
@@ -229,6 +265,21 @@ export default function Delegation() {
                 onChange={(e) => setForm({ ...form, Deadline: e.target.value })}
               />
             </div>
+  <label className="block text-sm font-medium mb-1 text-gray-700">
+        Assign By
+      </label>
+            <select
+  className="w-full h-11 rounded-md border border-gray-300 px-3 text-sm
+             focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+  value={assignBy}
+  onChange={(e) => setAssignBy(e.target.value)}
+>
+  <option value="">-- Select Assign By --</option>
+  <option value="Aman Agarwal">Aman Agarwal</option>
+  <option value="Kanishk Agarwal">Kanishk Agarwal</option>
+  <option value="Ritesh Agarwal">Ritesh Agarwal</option>
+</select>
+
 
             <div className="flex gap-3 mt-2">
               <button
