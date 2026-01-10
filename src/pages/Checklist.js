@@ -101,16 +101,24 @@ export default function Checklist() {
         if (isDone) return false;
 
         if (freq === "D" && plannedDate < today) return true;
+
         if (freq === "W") {
-          const { start: taskWeekStart, end: taskWeekEnd } = getWeekRange(plannedDate);
+          const { end: taskWeekEnd } = getWeekRange(plannedDate);
           return taskWeekEnd < today;
         }
+
         if (freq === "M") {
           return (
             plannedDate.getFullYear() < today.getFullYear() ||
-            (plannedDate.getFullYear() === today.getFullYear() && plannedDate.getMonth() < today.getMonth())
+            (plannedDate.getFullYear() === today.getFullYear() &&
+              plannedDate.getMonth() < today.getMonth())
           );
         }
+
+        if (freq === "Y") {
+          return plannedDate.getFullYear() < today.getFullYear();
+        }
+
         return false;
       }
 
@@ -130,6 +138,15 @@ export default function Checklist() {
           freq === "M" &&
           !isDone &&
           plannedDate.getMonth() === today.getMonth() &&
+          plannedDate.getFullYear() === today.getFullYear()
+        );
+      }
+
+      // -------- YEARLY --------
+      if (activeTab === "Yearly") {
+        return (
+          freq === "Y" &&
+          !isDone &&
           plannedDate.getFullYear() === today.getFullYear()
         );
       }
@@ -154,7 +171,7 @@ export default function Checklist() {
 
       {/* Tabs */}
       <div className="flex flex-nowrap gap-2 mb-4 justify-center sm:justify-start overflow-x-auto scrollbar-hide">
-        {["pending", "Daily", "Weekly", "Monthly"].map((tab) => (
+        {["pending", "Daily", "Weekly", "Monthly", "Yearly"].map((tab) => (
           <button
             key={tab}
             className={`flex-shrink-0 px-3 sm:px-4 py-1 sm:py-2 rounded font-medium text-sm sm:text-base transition-colors duration-200 ${
@@ -169,7 +186,7 @@ export default function Checklist() {
         ))}
       </div>
 
-      {/* Checklist Items (scrollable) */}
+      {/* Checklist Items */}
       <div className="grid gap-3 max-h-[60vh] overflow-y-auto pr-2">
         {filteredChecklists().length > 0 ? (
           filteredChecklists().map((c) => (
@@ -178,11 +195,22 @@ export default function Checklist() {
               className="p-3 sm:p-4 bg-white rounded shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center"
             >
               <div className="mb-2 sm:mb-0 sm:max-w-[70%]">
-                <div className="font-semibold text-gray-800 text-base sm:text-lg">{c.Task}</div>
-                <div className="text-gray-600 text-sm mt-1">
-                  Frequency: {c.Freq === "D" ? "Daily" : c.Freq === "W" ? "Weekly" : "Monthly"}
+                <div className="font-semibold text-gray-800 text-base sm:text-lg">
+                  {c.Task}
                 </div>
-                <div className="text-gray-500 text-sm mt-1">Planned: {c.Planned}</div>
+                <div className="text-gray-600 text-sm mt-1">
+                  Frequency:{" "}
+                  {c.Freq === "D"
+                    ? "Daily"
+                    : c.Freq === "W"
+                    ? "Weekly"
+                    : c.Freq === "M"
+                    ? "Monthly"
+                    : "Yearly"}
+                </div>
+                <div className="text-gray-500 text-sm mt-1">
+                  Planned: {c.Planned}
+                </div>
               </div>
 
               {!c.Actual && (
@@ -201,7 +229,9 @@ export default function Checklist() {
             </div>
           ))
         ) : (
-          <p className="text-gray-500 text-center mt-6 text-sm sm:text-base">No data found.</p>
+          <p className="text-gray-500 text-center mt-6 text-sm sm:text-base">
+            No data found.
+          </p>
         )}
       </div>
     </div>
