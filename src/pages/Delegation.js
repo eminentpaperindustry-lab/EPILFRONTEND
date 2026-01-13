@@ -11,11 +11,12 @@ export default function Delegation() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [activeTab, setActiveTab] = useState("pending");
+  const [admin, setAdmin] = useState([]);
 
   const [loadingTaskId, setLoadingTaskId] = useState(null);
   const [loadingShiftBtn, setLoadingShiftBtn] = useState(false);
   const [shiftTask, setShiftTask] = useState(null);
-const [assignBy, setAssignBy] = useState("Ritesh Agarwal");
+const [assignBy, setAssignBy] = useState();
 
   const [form, setForm] = useState({
     TaskName: "",
@@ -39,6 +40,18 @@ const [assignBy, setAssignBy] = useState("Ritesh Agarwal");
     return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
   }
 
+
+     const loadAdmin = async () => {
+    try {
+      const res = await axios.get("/employee/allAdmin", {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setAdmin(res.data || []);
+    } catch (err) {
+      console.error("Failed to load Admin", err);
+      toast.error("Failed to load Admin");
+    }
+  };
   const normalizeDate = (date) => {
     if (!date) return "";
     const d = new Date(date || Date.now());
@@ -76,7 +89,9 @@ const [assignBy, setAssignBy] = useState("Ritesh Agarwal");
 
   // ---------------- Load tasks on mount AND tab change ----------------
   useEffect(() => {
-    if (user) loadTasks();
+    if (user){loadTasks();
+      loadAdmin();
+    } 
   }, [user, activeTab]); // triggers on tab change
 
   // ---------------- Create Task ----------------
@@ -271,13 +286,17 @@ const [assignBy, setAssignBy] = useState("Ritesh Agarwal");
             <select
   className="w-full h-11 rounded-md border border-gray-300 px-3 text-sm
              focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-  value={assignBy}
+  value={assignBy||admin[0]?.name}
   onChange={(e) => setAssignBy(e.target.value)}
 >
   <option value="">-- Select Assign By --</option>
-  <option value="Aman Agarwal">Aman Agarwal</option>
-  <option value="Kanishk Agarwal">Kanishk Agarwal</option>
-  <option value="Ritesh Agarwal">Ritesh Agarwal</option>
+{admin
+    .filter(emp => typeof emp?.name === "string" && emp.name.trim() !== "")   // safety
+    .map((emp) => (
+      <option key={emp.name} value={emp.name}>
+        {emp.name}
+      </option>
+    ))}
 </select>
 
 

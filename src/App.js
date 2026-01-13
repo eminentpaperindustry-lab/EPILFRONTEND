@@ -10,6 +10,7 @@ import SupportTicket from "./pages/SupportTickets";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { AuthContext } from "./context/AuthContext";
+import AdditionalFeature from "./pages/AdditionalFeature"
 
 export default function App() {
   const { user } = useContext(AuthContext);
@@ -36,6 +37,8 @@ export default function App() {
         <Route path="checklist" element={<Checklist />} />
         <Route path="help-ticket" element={<HelpTicket />} />
         <Route path="support-ticket" element={<SupportTicket />} />
+        <Route path="additional-feature" element={<AdditionalFeature />} />
+
         <Route path="*" element={<div>Page not found</div>} />
       </Route>
 

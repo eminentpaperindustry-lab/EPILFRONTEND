@@ -27,6 +27,12 @@ export default function Sidebar({ mobile }) {
   const [isOpen, setIsOpen] = useState(false);
   const [helpTicketCount, setHelpTicketCount] = useState(0);
   const [supportTicketCount, setSupportTicketCount] = useState(0);
+  const [delegationCount, setdelegationCount] = useState(0);
+  const [checklistCount, setchecklistCount] = useState(0);
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
   const [loading, setLoading] = useState(true);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
@@ -41,13 +47,46 @@ export default function Sidebar({ mobile }) {
         headers: { Authorization: `Bearer ${token}` },
       };
 
-      const [supportRes, helpRes] = await Promise.all([
+      const [supportRes, helpRes,checklistRes, delegationRes] = await Promise.all([
         axios.get(`${process.env.REACT_APP_BASE_URL}/api/support-tickets/assigned`, authHeader),
         axios.get(`${process.env.REACT_APP_BASE_URL}/api/helpTickets/assigned`, authHeader),
+        axios.get(`${process.env.REACT_APP_BASE_URL}/api/checklist/`, authHeader),
+        axios.get(`${process.env.REACT_APP_BASE_URL}/api/delegations/`, authHeader),
       ]);
 
       const activeSupport = (supportRes.data || []).filter((t) => t.Status !== "Done");
       const activeHelp = (helpRes.data || []).filter((t) => t.Status !== "Done");
+      const delegationfilter=(delegationRes.data||[]).filter((t)=>((t.Status === "Pending" || t.Status === "Shifted") &&
+        !t.FinalDate &&
+        (t.Taskcompletedapproval === "" || t.Taskcompletedapproval === "Pending") &&
+        t.Taskcompletedapproval !== "Approved")||(t.deadline<=new Date().toLocaleDateString('en-GB')))
+
+        const checklistfilter = (checklistRes.data || []).filter((t) => {
+  if (!t.Planned) return false;
+
+  const [datePart, timePart] = t.Planned.split(' ');
+  const [day, month, year] = datePart.split('/');
+  const [hour, minute, second] = timePart.split(':');
+
+  const plannedDate = new Date(
+    year,
+    month - 1,
+    day,
+    hour,
+    minute,
+    second
+  );
+
+  plannedDate.setHours(0, 0, 0, 0);
+
+  return plannedDate <= today;
+});
+
+        setdelegationCount(delegationfilter.length)
+        console.log("checklistfilter:",checklistfilter , "count:",checklistfilter.length);
+        setchecklistCount(checklistfilter.length)
+        console.log("Delegation Filter:",delegationfilter, "Count:",delegationfilter.length);
+        
 
       setSupportTicketCount(activeSupport.length);
       setHelpTicketCount(activeHelp.length);
@@ -94,10 +133,13 @@ export default function Sidebar({ mobile }) {
           <nav className="p-6 space-y-2">
         {/* <MenuItem to="/dashboard" icon={FaTasks} count={0}>Dashboard</MenuItem> */}
 
-            <MenuItem to="/delegation" icon={FaTasks} onClick={closeSidebar}>Delegation</MenuItem>
-            <MenuItem to="/checklist" icon={FaClipboardList} onClick={closeSidebar}>Checklist</MenuItem>
+            <MenuItem to="/delegation" icon={FaTasks} onClick={closeSidebar} count={delegationCount} >Delegation</MenuItem>
+            <MenuItem to="/checklist" icon={FaClipboardList} onClick={closeSidebar} count={checklistCount} >Checklist</MenuItem>
             <MenuItem to="/support-ticket" icon={FaHeadset} onClick={closeSidebar} count={supportTicketCount}>Support Ticket</MenuItem>
             <MenuItem to="/help-ticket" icon={FaLifeRing} onClick={closeSidebar} count={helpTicketCount}>Help Ticket</MenuItem>
+            <MenuItem to="/additional-feature" icon={FaLifeRing} count={0}>Additional Feature</MenuItem>
+
+
           </nav>
         </aside>
 
@@ -116,10 +158,12 @@ export default function Sidebar({ mobile }) {
       <nav className="p-6 space-y-2">
         {/* <MenuItem to="/dashboard" icon={FaTasks} count={0}>Dashboard</MenuItem> */}
 
-        <MenuItem to="/delegation" icon={FaTasks} count={0}>Delegation</MenuItem>
-        <MenuItem to="/checklist" icon={FaClipboardList} count={0}>Checklist</MenuItem>
+        <MenuItem to="/delegation" icon={FaTasks} count={delegationCount}>Delegation</MenuItem>
+        <MenuItem to="/checklist" icon={FaClipboardList} count={checklistCount}>Checklist</MenuItem>
         <MenuItem to="/support-ticket" icon={FaHeadset} count={supportTicketCount}>Support Ticket</MenuItem>
         <MenuItem to="/help-ticket" icon={FaLifeRing} count={helpTicketCount}>Help Ticket</MenuItem>
+        <MenuItem to="/additional-feature" icon={FaLifeRing} count={0}>Additional Feature</MenuItem>
+
       </nav>
     </aside>
   );
