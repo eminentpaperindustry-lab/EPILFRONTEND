@@ -128,8 +128,7 @@ const [assignBy, setAssignBy] = useState();
   if (!form.TaskName || !form.Deadline)
     return toast.warn("Task Name & Deadline required");
 
-  if (!assignBy)
-    return toast.warn("Please select Assign By");
+  
 
   setLoadingTaskId("create");
   try {
@@ -138,7 +137,7 @@ const [assignBy, setAssignBy] = useState();
       Deadline: normalizeDate(form.Deadline),
       Priority: form.Priority || "High",
       Notes: form.Notes || "",
-      AssignBy: assignBy, // ✅ IMPORTANT
+      AssignBy: assignBy||admin[0]?.name, // ✅ IMPORTANT
     });
 
     if (res.data.ok === true) {
