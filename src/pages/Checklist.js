@@ -102,22 +102,11 @@ export default function Checklist() {
 
         if (freq === "D" && plannedDate < today) return true;
 
-        if (freq === "W") {
-          const { end: taskWeekEnd } = getWeekRange(plannedDate);
-          return taskWeekEnd < today;
-        }
+        if (freq === "W" && plannedDate < today) return true;
 
-        if (freq === "M") {
-          return (
-            plannedDate.getFullYear() < today.getFullYear() ||
-            (plannedDate.getFullYear() === today.getFullYear() &&
-              plannedDate.getMonth() < today.getMonth())
-          );
-        }
+        if (freq === "M" && plannedDate < today) return true;
 
-        if (freq === "Y") {
-          return plannedDate.getFullYear() < today.getFullYear();
-        }
+        if (freq === "Y" && plannedDate < today) return true;
 
         return false;
       }

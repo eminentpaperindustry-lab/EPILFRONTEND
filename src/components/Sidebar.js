@@ -135,8 +135,9 @@ today.setHours(0, 0, 0, 0);
 
             <MenuItem to="/delegation" icon={FaTasks} onClick={closeSidebar} count={delegationCount} >Delegation</MenuItem>
             <MenuItem to="/checklist" icon={FaClipboardList} onClick={closeSidebar} count={checklistCount} >Checklist</MenuItem>
-            <MenuItem to="/support-ticket" icon={FaHeadset} onClick={closeSidebar} count={supportTicketCount}>Support Ticket</MenuItem>
             <MenuItem to="/help-ticket" icon={FaLifeRing} onClick={closeSidebar} count={helpTicketCount}>Help Ticket</MenuItem>
+
+            <MenuItem to="/support-ticket" icon={FaHeadset} onClick={closeSidebar} count={supportTicketCount}>Support Ticket</MenuItem>
             <MenuItem to="/additional-feature" icon={FaLifeRing} count={0}>Additional Feature</MenuItem>
 
 
@@ -160,8 +161,9 @@ today.setHours(0, 0, 0, 0);
 
         <MenuItem to="/delegation" icon={FaTasks} count={delegationCount}>Delegation</MenuItem>
         <MenuItem to="/checklist" icon={FaClipboardList} count={checklistCount}>Checklist</MenuItem>
-        <MenuItem to="/support-ticket" icon={FaHeadset} count={supportTicketCount}>Support Ticket</MenuItem>
         <MenuItem to="/help-ticket" icon={FaLifeRing} count={helpTicketCount}>Help Ticket</MenuItem>
+
+        <MenuItem to="/support-ticket" icon={FaHeadset} count={supportTicketCount}>Support Ticket</MenuItem>
         <MenuItem to="/additional-feature" icon={FaLifeRing} count={0}>Additional Feature</MenuItem>
 
       </nav>
