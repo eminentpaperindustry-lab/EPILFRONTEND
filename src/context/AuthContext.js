@@ -21,6 +21,7 @@ export function AuthProvider({ children }) {
   const login = async (employeeID, password) => {
     try {
       const res = await axios.post("/auth/login", { employeeID, password });
+       console.log("res.data : ", res);
       setUser(res.data.user); // Set user in state
       setToken(res.data.token); // Set token in state
       localStorage.setItem("user", JSON.stringify(res.data.user)); // Store user in localStorage

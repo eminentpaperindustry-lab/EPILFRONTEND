@@ -127,7 +127,7 @@ export default function Topbar() {
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
 
             {/* STATUS BUTTON */}
-            <button
+            {/* <button
               onClick={() => {
                 setStatusOpen(!statusOpen);
                 setProfileOpen(false);
@@ -141,10 +141,10 @@ export default function Topbar() {
             >
               <span>{status}</span>
               <FaChevronDown className="w-3 h-3 opacity-70" />
-            </button>
+            </button> */}
 
             {/* TIMER */}
-            <span
+            {/* <span
               className="font-mono text-[10px] sm:text-xs px-3 py-[6px] rounded border tracking-wide"
               style={{
                 background: "#F8FAFC",
@@ -153,8 +153,21 @@ export default function Topbar() {
               }}
             >
               {formatTime(getCurrentTime())}
-            </span>
+            </span> */}
           </div>
+{/* === ACTIVE STATUS === */}
+{/* === ACTIVE STATUS === */}
+<div className="flex items-center gap-3 justify-end">
+  {/* Green Circle */}
+  <span className="w-3.5 h-3.5 rounded-full bg-green-500 animate-pulse" />
+
+  {/* Active Text */}
+  <span className="text-green-600 text-sm sm:text-base font-bold tracking-wide">
+    Active
+  </span>
+</div>
+
+
 
           {/* PROFILE BUTTON */}
           <button
@@ -243,7 +256,7 @@ export default function Topbar() {
               {user?.name}
             </p>
             <p className="text-xs mt-[2px]" style={{ color: theme.subtext }}>
-              {user?.email}
+              {user?.department}
             </p>
           </div>
 

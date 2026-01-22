@@ -192,13 +192,24 @@ export default function SupportTicket() {
 
           return (
             <div key={t.TicketID} className="bg-white p-4 rounded shadow flex flex-col md:flex-row justify-between items-start md:items-center">
-              <div className="flex-1">
+              {/* <div className="flex-1">
                 <div className="font-semibold text-lg mb-1">{t.Issue}</div>
                 <div className="text-sm">Created By: <span className="font-medium">{t.CreatedBy}</span></div>
                 <div className="text-sm">Assigned To: <span className="font-medium">{t.AssignedTo}</span></div>
                 <div className="text-sm">Created Date: <span className="font-medium">{createdDate}</span></div>
                 <div className="text-sm text-gray-500">Elapsed: {timeAgo(t.CreatedDate)}</div>
                 {doneDate && <div className="text-sm">Done Date: <span className="font-medium">{doneDate}</span></div>}
+                <div className="text-sm mt-1">Status: <span className="font-medium">{t.Status}</span></div>
+              </div> */}
+
+    <div className="flex-1">
+                <div className="font-semibold text-lg mb-1"> Ticket ID : <span className="font-medium"> {t.TicketID}</span></div>
+                <div className="font-semibold text-lg mb-1">Problem : <span className="font-medium">{t.Issue}</span> </div>
+
+                <div> <span className="text-sm">Created By: <span className="font-medium">{t.CreatedBy}</span></span> <span className="text-sm">Created Date: <span className="font-medium">{formatDate(t.CreatedDate)}</span></span></div>
+                <div className="text-sm">Assigned To: <span className="font-medium">{t.AssignedTo}</span></div>
+                {/* <div className="text-sm">Created Date: <span className="font-medium">{formatDate(t.CreatedDate)}</span></div> */}
+                <div className="text-sm text-gray-500">Elapsed: {timeAgo(t.CreatedDate)}</div>
                 <div className="text-sm mt-1">Status: <span className="font-medium">{t.Status}</span></div>
               </div>
 
