@@ -100,14 +100,13 @@ export default function Topbar() {
           <div className="flex flex-col leading-tight">
             <h1
               className="text-base font-semibold"
-       style={{ 
-  color: theme.text, 
-  paddingTop: "10px", 
-  paddingRight: "15px", 
-  // paddingBottom: "10px", 
-  paddingLeft: "15px",
-  fontSize: "16px" 
-}}
+              style={{ 
+                color: theme.text, 
+                paddingTop: "10px", 
+                paddingRight: "15px", 
+                paddingLeft: "15px",
+                fontSize: "16px" 
+              }}
             >
               Task Management
             </h1>
@@ -123,51 +122,16 @@ export default function Topbar() {
         {/* RIGHT SECTION */}
         <div className="flex items-center gap-4 sm:gap-7">
 
-          {/* === STATUS + TIMER === */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+          {/* === ACTIVE STATUS === */}
+          <div className="flex items-center gap-3 justify-end">
+            {/* Green Circle */}
+            <span className="w-3.5 h-3.5 rounded-full bg-green-500 animate-pulse" />
 
-            {/* STATUS BUTTON */}
-            {/* <button
-              onClick={() => {
-                setStatusOpen(!statusOpen);
-                setProfileOpen(false);
-              }}
-              className="px-3 py-1 rounded-md border flex items-center gap-2 text-xs sm:text-sm transition"
-              style={{
-                background: theme.primarySoft,
-                borderColor: theme.border,
-                color: theme.text,
-              }}
-            >
-              <span>{status}</span>
-              <FaChevronDown className="w-3 h-3 opacity-70" />
-            </button> */}
-
-            {/* TIMER */}
-            {/* <span
-              className="font-mono text-[10px] sm:text-xs px-3 py-[6px] rounded border tracking-wide"
-              style={{
-                background: "#F8FAFC",
-                borderColor: theme.border,
-                color: "#0F172A",
-              }}
-            >
-              {formatTime(getCurrentTime())}
-            </span> */}
+            {/* Active Text */}
+            <span className="text-green-600 text-sm sm:text-base font-bold tracking-wide">
+              Active
+            </span>
           </div>
-{/* === ACTIVE STATUS === */}
-{/* === ACTIVE STATUS === */}
-<div className="flex items-center gap-3 justify-end">
-  {/* Green Circle */}
-  <span className="w-3.5 h-3.5 rounded-full bg-green-500 animate-pulse" />
-
-  {/* Active Text */}
-  <span className="text-green-600 text-sm sm:text-base font-bold tracking-wide">
-    Active
-  </span>
-</div>
-
-
 
           {/* PROFILE BUTTON */}
           <button
@@ -286,6 +250,83 @@ export default function Topbar() {
           <button className="text-left text-white">Support</button>
         </div>
       )}
+{/* ===== DYNAMIC SCROLLING BANNER ===== */}
+{/* ===== DYNAMIC FAST SCROLLING BANNER ===== */}
+<div
+  className="w-full overflow-hidden border-t"
+  style={{
+    background: (() => {
+      const today = new Date();
+      return today.getMonth() === 0 && today.getDate() <= 26
+        ? "#f97316" // Orange for 26 Jan
+        : "#f1f5f9"; // Light background after 26 Jan
+    })(),
+    borderColor: theme.border,
+  }}
+>
+  <div
+    className="flex w-max whitespace-nowrap py-1 text-sm font-bold items-center"
+    style={{
+      color: (() => {
+        const today = new Date();
+        return today.getMonth() === 0 && today.getDate() <= 26
+          ? "#ffffff" // White on orange
+          : "#0f172a"; // Dark on light
+      })(),
+      animation: "scroll-left 10s linear infinite", // faster scroll
+      gap: "15px",
+    }}
+  >
+    {(() => {
+      const today = new Date();
+      if (today.getMonth() === 0 && today.getDate() <= 26) {
+        // 26 Jan message with Tiranga
+        const messages = [
+          " Happy Republic Day 2026",
+          "Celebrate Freedom & Unity! ",
+          "Jai Hind! ",
+        ];
+        // Duplicate content for seamless scroll
+        return [...messages, ...messages].map((msg, i) => (
+          <React.Fragment key={i}>
+            <span>{msg}</span>
+            <img
+              src="https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg"
+              alt="Tiranga"
+              style={{ width: "20px", height: "12px", display: "inline-block" }}
+            />
+          </React.Fragment>
+        ));
+      } else {
+        // Post 26 Jan system alert
+        const alertMsg =
+          "Refresh the portal before adding a task; if issues continue, log out/in or raise a support ticket.";
+        // Duplicate content for seamless scroll
+        return [alertMsg, alertMsg].map((msg, i) => <span key={i}>{msg}</span>);
+      }
+    })()}
+  </div>
+
+  <style>
+    {`
+      @keyframes scroll-left {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); } /* Seamless scroll */
+      }
+    `}
+  </style>
+</div>
+
+
+      <style>
+        {`
+          @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+          }
+        `}
+      </style>
     </header>
   );
 }
