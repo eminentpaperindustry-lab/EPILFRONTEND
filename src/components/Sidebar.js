@@ -131,7 +131,7 @@ today.setHours(0, 0, 0, 0);
           </div>
 
           <nav className="p-6 space-y-2">
-        {/* <MenuItem to="/dashboard" icon={FaTasks} count={0}>Dashboard</MenuItem> */}
+        <MenuItem to="/dashboard" icon={FaTasks} count={0}>Dashboard</MenuItem>
 
             <MenuItem to="/delegation" icon={FaTasks} onClick={closeSidebar} count={delegationCount} >Delegation</MenuItem>
             <MenuItem to="/checklist" icon={FaClipboardList} onClick={closeSidebar} count={checklistCount} >Checklist</MenuItem>
@@ -157,7 +157,7 @@ today.setHours(0, 0, 0, 0);
       </div>
 
       <nav className="p-6 space-y-2">
-        {/* <MenuItem to="/dashboard" icon={FaTasks} count={0}>Dashboard</MenuItem> */}
+        <MenuItem to="/dashboard" icon={FaTasks} count={0}>Dashboard</MenuItem>
 
         <MenuItem to="/delegation" icon={FaTasks} count={delegationCount}>Delegation</MenuItem>
         <MenuItem to="/checklist" icon={FaClipboardList} count={checklistCount}>Checklist</MenuItem>

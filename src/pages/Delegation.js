@@ -128,8 +128,6 @@ const [assignBy, setAssignBy] = useState();
   if (!form.TaskName || !form.Deadline)
     return toast.warn("Task Name & Deadline required");
 
-  
-
   setLoadingTaskId("create");
   try {
     const res = await axios.post("/delegations/", {
