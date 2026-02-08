@@ -59,12 +59,12 @@ export default function SupportTicket() {
   const handleFileChange = (e) => setForm((prev) => ({ ...prev, IssuePhoto: e.target.files[0] }));
 
   const createTicket = async () => {
-    if (!form.AssignedTo || !form.Issue) return alert("All fields required");
+    if (!form.Issue) return alert("All fields required");
     setCreating(true);
 
     try {
       const formData = new FormData();
-      formData.append("AssignedTo", form.AssignedTo);
+      // formData.append("AssignedTo", form.AssignedTo);
       formData.append("Issue", form.Issue);
       if (form.IssuePhoto) formData.append("IssuePhoto", form.IssuePhoto);
 
@@ -119,7 +119,7 @@ export default function SupportTicket() {
       <div className="bg-white p-4 rounded shadow mb-6">
         <h3 className="font-semibold mb-2">Create Ticket</h3>
 
-        <select
+        {/* <select
           className="w-full border p-2 rounded mb-2"
           value={form.AssignedTo}
           onChange={(e) => setForm({ ...form, AssignedTo: e.target.value })}
@@ -132,8 +132,8 @@ export default function SupportTicket() {
 
           {/* {employees.map((e) => (
             <option key={e.name} value={e.name}>{e.name}</option>
-          ))} */}
-        </select>
+          ))} 
+        </select> */}
 
         <textarea
           className="w-full border p-2 rounded mb-2"
@@ -184,69 +184,78 @@ export default function SupportTicket() {
       </div>
 
       {/* Tickets List */}
-      <div className="grid gap-4">
-        {tickets.length === 0 && <div className="text-gray-500">No tickets available</div>}
-        {tickets.map((t) => {
-          const createdDate = formatDate(t.CreatedDate);
-          const doneDate = t.DoneDate ? formatDate(t.DoneDate) : null;
-
-          return (
-            <div key={t.TicketID} className="bg-white p-4 rounded shadow flex flex-col md:flex-row justify-between items-start md:items-center">
-              {/* <div className="flex-1">
-                <div className="font-semibold text-lg mb-1">{t.Issue}</div>
-                <div className="text-sm">Created By: <span className="font-medium">{t.CreatedBy}</span></div>
-                <div className="text-sm">Assigned To: <span className="font-medium">{t.AssignedTo}</span></div>
-                <div className="text-sm">Created Date: <span className="font-medium">{createdDate}</span></div>
-                <div className="text-sm text-gray-500">Elapsed: {timeAgo(t.CreatedDate)}</div>
-                {doneDate && <div className="text-sm">Done Date: <span className="font-medium">{doneDate}</span></div>}
-                <div className="text-sm mt-1">Status: <span className="font-medium">{t.Status}</span></div>
-              </div> */}
-
-    <div className="flex-1">
-                <div className="font-semibold text-lg mb-1"> Ticket ID : <span className="font-medium"> {t.TicketID}</span></div>
-                <div className="font-semibold text-lg mb-1">Problem : <span className="font-medium">{t.Issue}</span> </div>
-
-                <div> <span className="text-sm">Created By: <span className="font-medium">{t.CreatedBy}</span></span> <span className="text-sm">Created Date: <span className="font-medium">{formatDate(t.CreatedDate)}</span></span></div>
-                <div className="text-sm">Assigned To: <span className="font-medium">{t.AssignedTo}</span></div>
-                {/* <div className="text-sm">Created Date: <span className="font-medium">{formatDate(t.CreatedDate)}</span></div> */}
-                <div className="text-sm text-gray-500">Elapsed: {timeAgo(t.CreatedDate)}</div>
-                <div className="text-sm mt-1">Status: <span className="font-medium">{t.Status}</span></div>
-              </div>
-
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 mt-2 md:mt-0">
-                {t.IssuePhoto && (
-                  <button
-                    onClick={() => setModalImage(t.IssuePhoto)}
-                    className="bg-gray-700 text-white px-3 py-1 rounded"
-                  >
-                    View Image
-                  </button>
-                )}
-
-                {activeTab === "assigned" && t.Status === "Pending" && (
-                  <button
-                    disabled={updating[t.TicketID]}
-                    onClick={() => updateStatus(t.TicketID, "InProgress")}
-                    className="bg-blue-600 text-white px-3 py-1 rounded"
-                  >
-                    {updating[t.TicketID] ? "Updating..." : "Start"}
-                  </button>
-                )}
-
-                {activeTab === "created" && t.Status === "InProgress" && (
-                  <button
-                    disabled={updating[t.TicketID]}
-                    onClick={() => updateStatus(t.TicketID, "Done")}
-                    className="bg-green-600 text-white px-3 py-1 rounded"
-                  >
-                    {updating[t.TicketID] ? "Updating..." : "Mark Done"}
-                  </button>
-                )}
-              </div>
+    <div className="grid gap-4">
+  {tickets.length === 0 && <div className="text-gray-500">No tickets available</div>}
+  
+  {tickets
+    .filter((ticket, index, self) => 
+      index === self.findIndex(t => t.Issue === ticket.Issue)
+    )
+    .map((t) => {
+      const sameIssueCount = tickets.filter(t2 => t2.Issue === t.Issue).length;
+      
+      return (
+        <div key={t.TicketID} className="bg-white p-4 rounded shadow flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div className="flex-1">
+            <div className="font-semibold text-lg mb-1">
+              Problem: <span className="font-medium">{t.Issue}</span>
+              {sameIssueCount > 1 && (
+                <span className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
+                  {sameIssueCount} tickets
+                </span>
+              )}
             </div>
-          );
-        })}
-      </div>
+            
+            <div className="text-sm">
+              Created By: <span className="font-medium">{t.CreatedBy}</span>
+              <span className="ml-4">
+                Created Date: <span className="font-medium">{formatDate(t.CreatedDate)}</span>
+              </span>
+            </div>
+            
+            <div className="text-sm">
+              Assigned To: <span className="font-medium">{"MIS TEAM"||t.AssignedTo}</span>
+            </div>
+            
+            <div className="text-sm text-gray-500">Elapsed: {timeAgo(t.CreatedDate)}</div>
+            <div className="text-sm mt-1">Status: <span className="font-medium">{t.Status}</span></div>
+          </div>
+
+          {/* Same buttons as before */}
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-2 mt-2 md:mt-0">
+            {t.IssuePhoto && (
+              <button
+                onClick={() => setModalImage(t.IssuePhoto)}
+                className="bg-gray-700 text-white px-3 py-1 rounded"
+              >
+                View Image
+              </button>
+            )}
+
+            {activeTab === "assigned" && t.Status === "Pending" && (
+              <button
+                disabled={updating[t.TicketID]}
+                onClick={() => updateStatus(t.TicketID, "InProgress")}
+                className="bg-blue-600 text-white px-3 py-1 rounded"
+              >
+                {updating[t.TicketID] ? "Updating..." : "Start"}
+              </button>
+            )}
+
+            {activeTab === "created" && t.Status === "InProgress" && (
+              <button
+                disabled={updating[t.TicketID]}
+                onClick={() => updateStatus(t.TicketID, "Done")}
+                className="bg-green-600 text-white px-3 py-1 rounded"
+              >
+                {updating[t.TicketID] ? "Updating..." : "Mark Done"}
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    })}
+</div>
 
       {/* Image Modal */}
       {modalImage && (

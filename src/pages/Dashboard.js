@@ -112,18 +112,20 @@ export default function Dashboard() {
           
           <Section title="Delegation Summary" accent="bg-blue-600">
             <Card title="Total Work" value={delData.totalWork} theme="blue" />
-            <Card title="Pending" value={delData.pendingTaskCount} theme="amber" />
+           
             <Card title="Completed" value={delData.completedTaskCount} theme="emerald" />
             <Card title="On Time" value={delData.onTimeCount} theme="cyan" />
+             <Card title="Pending" value={delData.pendingTaskCount} theme="amber" />
             <Card title="Pending %" value={`${delData.pendingTaskPercentage}%`} theme="indigo" />
             <Card title="Delayed %" value={`${delData.delayedWorkPercentage}%`} theme="rose" />
           </Section>
 
           <Section title="Checklist Summary" accent="bg-emerald-600">
             <Card title="Total Tasks" value={checkData.totalTasks} theme="blue" />
-            <Card title="Pending" value={checkData.pendingTasks} theme="amber" />
+            
             <Card title="Completed" value={checkData.completedTasks} theme="emerald" />
             <Card title="On Time" value={checkData.onTimeTasks} theme="cyan" />
+            <Card title="Pending" value={checkData.pendingTasks} theme="amber" />
             <Card title="Pending %" value={`${checkData.pendingPercentage}%`} theme="indigo" />
             <Card title="Delayed %" value={`${checkData.delayedPercentage}%`} theme="rose" />
           </Section>
@@ -134,9 +136,10 @@ export default function Dashboard() {
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Assigned Tickets</span>
             </div>
             <Card title="Total" value={htAssigned.assignedTotalTicket} theme="slate" />
-            <Card title="Pending" value={htAssigned.assignedPendingTicket} theme="amber" />
+            
             <Card title="Completed" value={htAssigned.assignedCompletedTicket} theme="emerald" />
             <Card title="On Time" value={htAssigned.assignedOnTime} theme="cyan" />
+            <Card title="Pending" value={htAssigned.assignedPendingTicket} theme="amber" />
             <Card title="Pending %" value={`${htAssigned.assignedPendingPercentage}%`} theme="indigo" />
             <Card title="Delay %" value={`${htAssigned.assignedDelayPercentage}%`} theme="rose" />
 
@@ -144,9 +147,10 @@ export default function Dashboard() {
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Created Tickets</span>
             </div>
             <Card title="Total" value={htCreated.createdTotalTicket} theme="slate" />
-            <Card title="Pending" value={htCreated.createdPendingTicket} theme="amber" />
+          
             <Card title="Completed" value={htCreated.createdCompletedTicket} theme="emerald" />
             <Card title="On Time" value={htCreated.createdOnTime} theme="cyan" />
+              <Card title="Pending" value={htCreated.createdPendingTicket} theme="amber" />
             <Card title="Pending %" value={`${htCreated.createdPendingPercentage}%`} theme="indigo" />
             <Card title="Delay %" value={`${htCreated.createdDelayPercentage}%`} theme="rose" />
           </Section>
@@ -157,9 +161,10 @@ export default function Dashboard() {
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Assigned Tickets</span>
             </div>
             <Card title="Total" value={stAssigned.assignedTotalTicket} theme="slate" />
-            <Card title="Pending" value={stAssigned.assignedPendingTicket} theme="amber" />
+           
             <Card title="Completed" value={stAssigned.assignedCompletedTicket} theme="emerald" />
             <Card title="On Time" value={stAssigned.assignedOnTime} theme="cyan" />
+             <Card title="Pending" value={stAssigned.assignedPendingTicket} theme="amber" />
             <Card title="Pending %" value={`${stAssigned.assignedPendingPercentage}%`} theme="indigo" />
             <Card title="Delay %" value={`${stAssigned.assignedDelayPercentage}%`} theme="rose" />
 
@@ -167,9 +172,10 @@ export default function Dashboard() {
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Created Tickets</span>
             </div>
             <Card title="Total" value={stCreated.createdTotalTicket} theme="slate" />
-            <Card title="Pending" value={stCreated.createdPendingTicket} theme="amber" />
+           
             <Card title="Completed" value={stCreated.createdCompletedTicket} theme="emerald" />
             <Card title="On Time" value={stCreated.createdOnTime} theme="cyan" />
+             <Card title="Pending" value={stCreated.createdPendingTicket} theme="amber" />
             <Card title="Pending %" value={`${stCreated.createdPendingPercentage}%`} theme="indigo" />
             <Card title="Delay %" value={`${stCreated.createdDelayPercentage}%`} theme="rose" />
           </Section>
