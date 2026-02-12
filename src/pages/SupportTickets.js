@@ -197,6 +197,12 @@ export default function SupportTicket() {
       return (
         <div key={t.TicketID} className="bg-white p-4 rounded shadow flex flex-col md:flex-row justify-between items-start md:items-center">
           <div className="flex-1">
+
+   <div className="text-sm text-gray-600">
+                 Tickets ID : {t.TicketID}
+                  
+                </div>
+
             <div className="font-semibold text-lg mb-1">
               Problem: <span className="font-medium">{t.Issue}</span>
               {sameIssueCount > 1 && (
