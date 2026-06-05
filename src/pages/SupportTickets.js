@@ -57,8 +57,8 @@ export default function SupportTicket() {
     try {
       const res = await axios.get("/employee/all", authHeader);
       const currentUser = (res.data || []).find(e => e.name === user.name);
-      setUserDept(currentUser?.department || "");
-      console.log("User Department:", currentUser?.department);
+      setUserDept(currentUser?.Department || "");
+      console.log("User Department:", currentUser?.Department);
     } catch (err) {
       console.error("Failed to load user department:", err);
       toast.error("Failed to load user department");
