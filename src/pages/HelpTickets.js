@@ -208,7 +208,7 @@ export default function HelpTickets() {
                   </button>
                 )}
 
-                {activeTab === "created" && t.Status === "InProgress" && (
+                {activeTab === "assigned" && t.Status === "InProgress" && (
                   <button
                     disabled={updating[t.TicketID]}
                     onClick={() => updateStatus(t.TicketID, "Done")}

@@ -4,7 +4,7 @@ import { getMyWorklists, createWorklist, updateWorklist, bulkUploadWorklists, do
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const FREQUENCIES = ["Daily", "Weekly", "Monthly", "Yearly"];
