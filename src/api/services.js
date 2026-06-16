@@ -91,3 +91,6 @@ export const bulkUploadWorklists = (worklists) =>
 
 export const downloadMyWorklists = () =>
   axios.get("/worklist/download/my", authHeader());
+
+export const updateAITime = (id, AITime) =>
+  axios.put(`/worklist/ai-time/${id}`, { AITime }, authHeader());

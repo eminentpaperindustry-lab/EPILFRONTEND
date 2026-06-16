@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { getMyWorklists, createWorklist, updateWorklist, bulkUploadWorklists, downloadMyWorklists } from "../api/services";
+import { getMyWorklists, createWorklist, updateWorklist, bulkUploadWorklists, downloadMyWorklists, updateAITime } from "../api/services";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import * as XLSX from "xlsx";
@@ -41,8 +41,15 @@ export default function WorkList() {
   const [bulkResult, setBulkResult] = useState(null);
   const [uploading, setUploading] = useState(false);
   
+  // AI Time Sheet states
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiWorklist, setAiWorklist] = useState(null);
+  const [selectedAITime, setSelectedAITime] = useState("");
+  const [aiSaving, setAiSaving] = useState(false);
+  
   const bulkModalRef = useRef();
   const addModalRef = useRef();
+  const aiModalRef = useRef();
 
   const loadWorklists = useCallback(async () => {
     setLoading(true);
@@ -79,6 +86,8 @@ export default function WorkList() {
     setCustomWorkingTime("");
   };
 
+  // EDIT FUNCTIONALITY - COMMENTED OUT (Replaced by AI Time Sheet)
+  /*
   const openEdit = (wl) => {
     setEditing(wl);
     setForm({ 
@@ -112,6 +121,37 @@ export default function WorkList() {
     
     setCustomWorkingTime("");
     setShowModal(true);
+  };
+  */
+
+  // ========== NEW: AI TIME SHEET MODAL ==========
+  const openAITimeSheet = (wl) => {
+    setAiWorklist(wl);
+    setSelectedAITime(wl.AITime || "");
+    setShowAIModal(true);
+  };
+
+  const closeAIModal = () => {
+    setShowAIModal(false);
+    setAiWorklist(null);
+    setSelectedAITime("");
+  };
+
+  const handleSaveAITime = async () => {
+    if (!selectedAITime || !selectedAITime.trim()) {
+      return toast.warn("Please select AI Time");
+    }
+    setAiSaving(true);
+    try {
+      await updateAITime(aiWorklist.WorkListId, selectedAITime);
+      toast.success("AI Time updated successfully!");
+      closeAIModal();
+      loadWorklists();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to update AI Time");
+    } finally {
+      setAiSaving(false);
+    }
   };
 
   const handleWorkingTimeChange = (value) => {
@@ -268,12 +308,13 @@ export default function WorkList() {
       wl.Frequency,
       wl.ScheduleDays || wl.ScheduleDates || "-",
       wl.WorkingTime,
+      wl.AITime || "-",
       wl.TemplateLink || wl.Remark || "-"
     ]);
     
     autoTable(doc, {
       startY: 50,
-      head: [["#", "Worklist Name", "Frequency", "Schedule", "Time", "Link/Remark"]],
+      head: [["#", "Worklist Name", "Frequency", "Schedule", "Time", "AI Time", "Link/Remark"]],
       body: tableData,
       theme: "striped",
       headStyles: { fillColor: [41, 128, 185], textColor: 255, fontSize: 9 },
@@ -363,7 +404,8 @@ export default function WorkList() {
         WorkingTime: d.WorkingTime,
         ScheduleDays: d.ScheduleDays || "",
         ScheduleDates: d.ScheduleDates || "",
-        TemplateLinkRemark: d.TemplateLink || d.Remark || ""
+        TemplateLinkRemark: d.TemplateLink || d.Remark || "",
+        AITime: d.AITime || ""
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "MyWorkList");
@@ -443,6 +485,9 @@ export default function WorkList() {
                         wl.Frequency === "Monthly" ? "bg-purple-100 text-purple-700" : "bg-orange-100 text-orange-700"
                       }`}>{wl.Frequency}</span>
                       <span>⏰ {wl.WorkingTime}</span>
+                      {wl.AITime && (
+                        <span className="text-emerald-600 font-bold">🤖 AI Time: {wl.AITime}</span>
+                      )}
                       <span className="text-green-600">{getScheduleDisplay(wl)}</span>
                     </div>
                     {(wl.TemplateLink || wl.Remark) && (
@@ -465,7 +510,9 @@ export default function WorkList() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => openEdit(wl)} className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-700">✏️ Edit</button>
+                    {/* EDIT BUTTON - COMMENTED OUT (Replaced by AI Time Sheet) */}
+                    {/* <button onClick={() => openEdit(wl)} className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-700">✏️ Edit</button> */}
+                    <button onClick={() => openAITimeSheet(wl)} className="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">🤖 AI Time Sheet</button>
                   </div>
                 </div>
               </div>
@@ -629,6 +676,77 @@ export default function WorkList() {
             <div className="flex justify-end gap-3">
               <button onClick={closeBulkModal} className="px-4 py-2 bg-gray-200 rounded-lg">Close</button>
               <button onClick={handleBulkUpload} disabled={uploading || !bulkData.length} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">{uploading ? "Uploading..." : `Upload ${bulkData.length} rows`}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== NEW: AI TIME SHEET MODAL ========== */}
+      {showAIModal && aiWorklist && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" onClick={(e) => handleClickOutside(e, aiModalRef, closeAIModal)}>
+          <div ref={aiModalRef} className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl relative">
+            <button onClick={closeAIModal} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button>
+            <h2 className="text-lg font-black text-slate-800 mb-4">🤖 AI Time Sheet</h2>
+            
+            <div className="space-y-4">
+              <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-sm font-bold text-slate-700">📋 Task: {aiWorklist.WorklistName}</p>
+                <p className="text-sm text-slate-600 mt-1">📊 Frequency: {aiWorklist.Frequency}</p>
+                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-sm font-bold text-amber-800">⏰ Current Working Time (E Column):</p>
+                  <p className="text-2xl font-black text-amber-600 mt-1">{aiWorklist.WorkingTime}</p>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  💡 After using AI / Portal, how much time does this task take now? Select the reduced time below.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-2">Select AI/Portal Reduced Time *</label>
+                <select 
+                  value={selectedAITime} 
+                  onChange={(e) => setSelectedAITime(e.target.value)} 
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="">-- Select Time --</option>
+                  <option value="5M">5 Minutes</option>
+                  <option value="10M">10 Minutes</option>
+                  <option value="15M">15 Minutes</option>
+                  <option value="20M">20 Minutes</option>
+                  <option value="30M">30 Minutes</option>
+                  <option value="45M">45 Minutes</option>
+                  <option value="60M">60 Minutes (1 Hour)</option>
+                  <option value="90M">90 Minutes (1.5 Hours)</option>
+                  <option value="120M">120 Minutes (2 Hours)</option>
+                  <option value="150M">150 Minutes (2.5 Hours)</option>
+                  <option value="180M">180 Minutes (3 Hours)</option>
+                  <option value="210M">210 Minutes (3.5 Hours)</option>
+                  <option value="240M">240 Minutes (4 Hours)</option>
+                  <option value="300M">300 Minutes (5 Hours)</option>
+                </select>
+              </div>
+
+              {selectedAITime && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  <p className="text-sm text-emerald-800">
+                    🚀 New AI Time will be saved to: <strong>{selectedAITime}</strong>
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={closeAIModal} className="px-4 py-2 bg-gray-200 rounded-lg font-bold text-sm">Cancel</button>
+              <button 
+                onClick={handleSaveAITime} 
+                disabled={aiSaving || !selectedAITime} 
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm hover:bg-emerald-700 disabled:bg-emerald-300"
+              >
+                {aiSaving ? "Saving..." : "💾 Save AI Time"}
+              </button>
             </div>
           </div>
         </div>
