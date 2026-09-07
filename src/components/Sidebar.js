@@ -109,6 +109,7 @@ export default function Sidebar({ mobile }) {
             <MenuItem to="/support-ticket" icon={FaHeadset} onClick={closeSidebar} count={supportTicketCount}>Support Ticket</MenuItem>
             <MenuItem to="/additional-feature" icon={FaLifeRing} count={0}>Additional Feature</MenuItem>
             <MenuItem to="/worklist" icon={FaList} onClick={closeSidebar} count={0}>WorkList</MenuItem>
+            <MenuItem to="/training" icon={FaClipboardList} onClick={closeSidebar} count={0}>Training</MenuItem>
           </nav>
           <div className="p-4 border-t border-gray-800 text-center">
             <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
@@ -139,6 +140,7 @@ export default function Sidebar({ mobile }) {
         <MenuItem to="/support-ticket" icon={FaHeadset} count={supportTicketCount}>Support Ticket</MenuItem>
         <MenuItem to="/additional-feature" icon={FaLifeRing} count={0}>Additional Feature</MenuItem>
         <MenuItem to="/worklist" icon={FaList} count={0}>WorkList</MenuItem>
+        <MenuItem to="/training" icon={FaClipboardList} count={0}>Training</MenuItem>
       </nav>
       <div className="p-4 border-t border-gray-800 text-center">
         <div className="flex items-center justify-center gap-2 text-xs text-gray-500">

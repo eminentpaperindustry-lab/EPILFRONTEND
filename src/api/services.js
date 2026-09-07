@@ -94,3 +94,19 @@ export const downloadMyWorklists = () =>
 
 export const updateAITime = (id, AITime) =>
   axios.put(`/worklist/ai-time/${id}`, { AITime }, authHeader());
+
+// ──── TRAINING (DOER) ────
+export const getApprovedTrainings = (department) =>
+  axios.get(`/training/templates/approved?department=${encodeURIComponent(department || "all")}`, authHeader());
+
+export const getTrainingQuestionsForTest = (templateId) =>
+  axios.get(`/training/qa/${templateId}?forTest=1`, authHeader());
+
+export const getMyTrainings = () =>
+  axios.get("/training/my", authHeader());
+
+export const startTraining = (templateId) =>
+  axios.post("/training/start", { templateId }, authHeader());
+
+export const updateTrainingProgress = (payload) =>
+  axios.put("/training/progress", payload, authHeader());

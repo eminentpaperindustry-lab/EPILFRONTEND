@@ -8,6 +8,7 @@ import Checklist from "./pages/Checklist";
 import HelpTicket from "./pages/HelpTickets";
 import SupportTicket from "./pages/SupportTickets";
 import WorkList from "./pages/WorkList";
+import Training from "./pages/Training";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { AuthContext } from "./context/AuthContext";
@@ -40,6 +41,7 @@ export default function App() {
         <Route path="support-ticket" element={<SupportTicket />} />
         <Route path="additional-feature" element={<AdditionalFeature />} />
         <Route path="worklist" element={<WorkList />} />
+        <Route path="training" element={<Training />} />
 
         <Route path="*" element={<div>Page not found</div>} />
       </Route>
